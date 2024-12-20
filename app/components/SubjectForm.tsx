@@ -41,38 +41,33 @@ export default function SubjectForm() {
 
   return (
     <div className="w-full max-w-md mx-auto mt-10">
-      <form onSubmit={handleSubmit} className="flex gap-2 mb-4">
-        <input
-          type="text"
-          className="border p-2 flex-1"
-          placeholder="enter a subject"
-          value={subject}
-          onChange={(e) => setSubject(e.target.value)}
-        />
-        <button type="submit" className="bg-black text-white px-4 py-2">go</button>
-      </form>
+      <section className="mb-8">
+        <form className="flex gap-2 items-center" onSubmit={handleSubmit}>
+          <input type="text" className="border-4 border-black p-2 text-xl w-full" placeholder="enter a subject" onChange={(e) => setSubject(e.target.value)} />
+          <button type="submit" className="border-4 border-black bg-black text-white p-2 uppercase font-bold">go</button>
+        </form>
+      </section>
+
       {loading && <div className="text-center text-sm">loading...</div>}
+
       {error && <div className="text-center text-red-500 text-sm">{error}</div>}
+
       {zineData && (
         <div className="space-y-4 mt-8">
-          <h1 className="text-3xl font-bold">{zineData.title}</h1>
-          <div className="space-y-2">
-            {zineData.editorial.split('\n').map((p: string, i: number) => (
-              <p key={i}>{p}</p>
-            ))}
-          </div>
-          <div className="bg-gray-100 p-4">
-            <h2 className="font-semibold">opinion:</h2>
+          <h2 className="text-3xl font-bold uppercase border-b-4 border-black pb-2 mb-4">{zineData.title}</h2>
+          <section className="border-4 border-black p-4 mb-4">
+            {zineData.editorial.split('\n').map((p: string, i: number) => <p className="mb-4" key={i}>{p}</p>)}
+          </section>
+          <section className="border-4 border-black p-4 mb-4 bg-yellow-200">
+            <h3 className="uppercase font-bold mb-2">opinion</h3>
             <p>{zineData.opinion}</p>
-          </div>
-          <div>
-            <h2 className="font-semibold">fun facts:</h2>
-            <ul className="list-disc list-inside">
-              {zineData.fun_facts.map((fact: string, i: number) => (
-                <li key={i}>{fact}</li>
-              ))}
+          </section>
+          <section className="border-4 border-black p-4">
+            <h3 className="uppercase font-bold mb-2">fun facts</h3>
+            <ul className="list-disc pl-8">
+              {zineData.funFacts.map((fact: string, i: number) => <li key={i} className="mb-2">{fact}</li>)}
             </ul>
-          </div>
+          </section>
         </div>
       )}
     </div>

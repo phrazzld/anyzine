@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
-export const runtime = 'nodejs'; // ensure we're using node runtime if needed
+export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
   const { subject } = await request.json();
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
 "title": string,
 "editorial": string (2-3 paragraphs),
 "opinion": string (1 paragraph),
-"fun_facts": array of 3-5 short strings
+"funFacts": array of 3-5 short strings
 }
 do not include any extra text outside the json.`
         }
