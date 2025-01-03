@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { TZineSection, ZineDisplay } from "./ZineDisplay";
-import { SUBJECTS } from "@/app/constants"; // import
+import { SUBJECTS } from "@/app/constants";
 
 export default function SubjectForm() {
   const [subject, setSubject] = useState("");
@@ -41,11 +41,11 @@ export default function SubjectForm() {
     }
   };
 
-  // new helper
+  // handle random subject
   const handleRandom = () => {
     const randomIndex = Math.floor(Math.random() * SUBJECTS.length);
     setSubject(SUBJECTS[randomIndex]);
-    setError(null); // just in case
+    setError(null);
   };
 
   return (
@@ -85,28 +85,32 @@ export default function SubjectForm() {
         </form>
       </section>
 
-      {/* loading / error / empty states */}
+      {/* loading */}
       {loading && (
-        <div
-          className="
-            p-6 border-2 border-t-0 border-black text-center text-sm uppercase font-bold
-            relative h-16 diagonal-stripes
-          "
-        >
-          generating...
-        </div>
-      )}
-      {error && !loading && (
-        <div className="p-6 border-2 border-red-500 text-red-500 text-sm text-center">
-          {error}
-        </div>
-      )}
-      {!zineData && !loading && !error && (
         <div className="p-6 border-2 border-t-0 border-black text-center">
-          no zine yet. enter a subject above or click random.
+          <div className="flex justify-center items-center gap-2">
+            <div className="animate-spin w-8 h-8 border-4 border-black border-t-transparent rounded-full"></div>
+            <span className="uppercase font-bold">generating...</span>
+          </div>
         </div>
       )}
 
+      {/* error */}
+      {error && !loading && (
+        <div className="p-6 border-2 border-red-500 bg-red-100 text-red-800 text-center text-sm rounded">
+          {error}
+        </div>
+      )}
+
+      {/* empty */}
+      {!zineData && !loading && !error && (
+        <div className="p-6 border-2 border-t-0 border-black text-center flex flex-col items-center">
+          <span className="text-4xl mb-2">🤔</span>
+          <p>no zine yet. enter a subject above or click random.</p>
+        </div>
+      )}
+
+      {/* zine */}
       {zineData && <ZineDisplay sections={zineData.sections} />}
     </div>
   );
