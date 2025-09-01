@@ -8,24 +8,27 @@ vi.mock('@/app/constants', () => ({
   SUBJECTS: ['test subject 1', 'test subject 2', 'cyberpunk coffee']
 }));
 
-// Mock fetch for API calls
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
+// Mock the resilient API utility  
+vi.mock('@/app/utils/api-resilience', () => ({
+  resilientZineGeneration: vi.fn(),
+  clearZineCache: vi.fn()
+}));
+
+// Get the mocked function reference
+import { resilientZineGeneration } from '@/app/utils/api-resilience';
+const mockResilientZineGeneration = vi.mocked(resilientZineGeneration);
 
 describe('SubjectForm', () => {
   const user = userEvent.setup();
 
   beforeEach(() => {
-    mockFetch.mockClear();
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({
-        sections: [
-          { type: 'banner', content: 'TEST BANNER' },
-          { type: 'subheading', content: 'Test subheading' },
-          { type: 'intro', content: 'Test intro content' }
-        ]
-      })
+    mockResilientZineGeneration.mockClear();
+    mockResilientZineGeneration.mockResolvedValue({
+      sections: [
+        { type: 'banner', content: 'TEST BANNER' },
+        { type: 'subheading', content: 'Test subheading' },
+        { type: 'intro', content: 'Test intro content' }
+      ]
     });
   });
 
@@ -56,7 +59,7 @@ describe('SubjectForm', () => {
       await user.click(createButton);
 
       expect(screen.getByText('please enter a subject')).toBeInTheDocument();
-      expect(mockFetch).not.toHaveBeenCalled();
+      expect(mockResilientZineGeneration).not.toHaveBeenCalled();
     });
 
     it('should show error for too short input', async () => {
@@ -69,7 +72,7 @@ describe('SubjectForm', () => {
       await user.click(createButton);
 
       expect(screen.getByText('subject must be at least 2 characters')).toBeInTheDocument();
-      expect(mockFetch).not.toHaveBeenCalled();
+      expect(mockResilientZineGeneration).not.toHaveBeenCalled();
     });
 
     it('should show error for too long input', async () => {
@@ -83,7 +86,7 @@ describe('SubjectForm', () => {
       await user.click(createButton);
 
       expect(screen.getByText('subject must be 200 characters or less')).toBeInTheDocument();
-      expect(mockFetch).not.toHaveBeenCalled();
+      expect(mockResilientZineGeneration).not.toHaveBeenCalled();
     });
 
     it('should show error for prompt injection patterns', async () => {
@@ -96,7 +99,7 @@ describe('SubjectForm', () => {
       await user.click(createButton);
 
       expect(screen.getByText('subject contains invalid patterns')).toBeInTheDocument();
-      expect(mockFetch).not.toHaveBeenCalled();
+      expect(mockResilientZineGeneration).not.toHaveBeenCalled();
     });
 
     it('should clear error when input becomes valid', async () => {
@@ -150,14 +153,11 @@ describe('SubjectForm', () => {
   describe('Form submission and API integration', () => {
     it('should show loading state during API call', async () => {
       // Mock a delayed response
-      mockFetch.mockImplementation(() => 
+      mockResilientZineGeneration.mockImplementation(() => 
         new Promise(resolve => setTimeout(() => resolve({
-          ok: true,
-          json: () => Promise.resolve({
-            sections: [
-              { type: 'banner', content: 'TEST BANNER' }
-            ]
-          })
+          sections: [
+            { type: 'banner', content: 'TEST BANNER' }
+          ]
         }), 100))
       );
 
@@ -170,7 +170,6 @@ describe('SubjectForm', () => {
       await user.click(createButton);
 
       expect(screen.getByText('generating...')).toBeInTheDocument();
-      expect(screen.getByText('generating...')).toBeInTheDocument();
     });
 
     it('should make correct API call with valid input', async () => {
@@ -182,11 +181,7 @@ describe('SubjectForm', () => {
       await user.type(input, 'valid test subject');
       await user.click(createButton);
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/generate-zine', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subject: 'valid test subject' })
-      });
+      expect(mockResilientZineGeneration).toHaveBeenCalledWith('valid test subject');
     });
 
     it('should display zine data after successful API response', async () => {
@@ -204,11 +199,9 @@ describe('SubjectForm', () => {
     });
 
     it('should handle API errors gracefully', async () => {
-      mockFetch.mockResolvedValue({
-        ok: false,
-        json: () => Promise.resolve({
-          error: 'API error message'
-        })
+      mockResilientZineGeneration.mockRejectedValue({
+        message: 'API error message'
+        // No status field, so it falls through to the message
       });
 
       render(<SubjectForm />);
@@ -225,13 +218,11 @@ describe('SubjectForm', () => {
     });
 
     it('should handle rate limiting (429) responses with specific message', async () => {
-      mockFetch.mockResolvedValue({
-        ok: false,
+      mockResilientZineGeneration.mockRejectedValue({
+        isRateLimit: true,
         status: 429,
-        json: () => Promise.resolve({
-          error: 'Too many requests',
-          retryAfter: 30
-        })
+        retryAfter: 30,
+        message: 'Too many requests. Please wait 30 seconds before trying again.'
       });
 
       render(<SubjectForm />);
@@ -248,7 +239,10 @@ describe('SubjectForm', () => {
     });
 
     it('should handle network errors', async () => {
-      mockFetch.mockRejectedValue(new Error('Network error'));
+      mockResilientZineGeneration.mockRejectedValue({
+        isNetworkError: true,
+        message: 'Network error occurred'
+      });
 
       render(<SubjectForm />);
       
@@ -259,7 +253,7 @@ describe('SubjectForm', () => {
       await user.click(createButton);
 
       await waitFor(() => {
-        expect(screen.getByText('network error')).toBeInTheDocument();
+        expect(screen.getByText('Network error. Check your connection and try again.')).toBeInTheDocument();
       });
     });
   });
@@ -268,27 +262,21 @@ describe('SubjectForm', () => {
     it('should clear zine data when starting new generation', async () => {
       // Mock a delayed response for the second call
       let callCount = 0;
-      mockFetch.mockImplementation(() => {
+      mockResilientZineGeneration.mockImplementation(() => {
         callCount++;
         if (callCount === 2) {
           // Second call should be delayed
           return new Promise(resolve => setTimeout(() => resolve({
-            ok: true,
-            json: () => Promise.resolve({
-              sections: [
-                { type: 'banner', content: 'SECOND BANNER' }
-              ]
-            })
+            sections: [
+              { type: 'banner', content: 'SECOND BANNER' }
+            ]
           }), 100));
         }
         // First call resolves immediately
         return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({
-            sections: [
-              { type: 'banner', content: 'TEST BANNER' }
-            ]
-          })
+          sections: [
+            { type: 'banner', content: 'TEST BANNER' }
+          ]
         });
       });
 
@@ -324,11 +312,7 @@ describe('SubjectForm', () => {
       await user.type(input, '  test subject  ');
       await user.click(createButton);
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/generate-zine', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subject: 'test subject' })
-      });
+      expect(mockResilientZineGeneration).toHaveBeenCalledWith('test subject');
     });
   });
 
@@ -342,10 +326,9 @@ describe('SubjectForm', () => {
     });
 
     it('should show loading indicator with proper semantics', async () => {
-      mockFetch.mockImplementation(() => 
+      mockResilientZineGeneration.mockImplementation(() => 
         new Promise(resolve => setTimeout(() => resolve({
-          ok: true,
-          json: () => Promise.resolve({ sections: [] })
+          sections: []
         }), 100))
       );
 

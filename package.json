@@ -18,9 +18,10 @@
     "test:utils": "vitest run app/utils/",
     "test:ci": "vitest run --coverage --reporter=verbose",
     "test:security": "vitest run app/utils/validation.test.ts",
-    "check": "npm run lint && npm run test:run && npm run build"
+    "check": "pnpm run lint && pnpm run test:run && pnpm run build"
   },
   "dependencies": {
+    "dompurify": "^3.2.6",
     "next": "^15.5.2",
     "openai": "^4.77.0",
     "react": "^19.0.0",
@@ -31,6 +32,7 @@
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
+    "@types/dompurify": "^3.2.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

@@ -185,7 +185,7 @@ describe('ZineDisplay', () => {
       expect(heading).toHaveClass('uppercase', 'font-bold', 'mb-2');
 
       const opinionSection = heading.closest('section');
-      expect(opinionSection).toHaveStyle({ backgroundColor: '#ff6ee8' });
+      expect(opinionSection).toHaveClass('bg-fuchsia-400');
       expect(screen.getByText('This is my strong opinion on the matter.')).toBeInTheDocument();
     });
   });
@@ -262,7 +262,7 @@ describe('ZineDisplay', () => {
       expect(heading).toHaveClass('uppercase', 'font-bold', 'mb-2');
 
       const conclusionSection = heading.closest('section');
-      expect(conclusionSection).toHaveStyle({ backgroundColor: '#a8ff9b' });
+      expect(conclusionSection).toHaveClass('bg-lime-300');
 
       expect(screen.getByText('Final thoughts paragraph.')).toBeInTheDocument();
       expect(screen.getByText('Closing remarks.')).toBeInTheDocument();
@@ -381,7 +381,11 @@ describe('ZineDisplay', () => {
       render(<ZineDisplay sections={sections} />);
 
       const listItems = screen.getAllByRole('listitem');
-      expect(listItems).toHaveLength(5); // Should render all items, even non-strings
+      expect(listItems).toHaveLength(2); // Should only render valid string content after sanitization
+      
+      // Verify that only the string content is rendered
+      expect(listItems[0]).toHaveTextContent('String fact');
+      expect(listItems[1]).toHaveTextContent('Another string');
     });
   });
 

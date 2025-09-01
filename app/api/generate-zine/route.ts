@@ -1,10 +1,59 @@
-// app/api/generate-zine/route.ts
+/**
+ * @fileoverview API route for generating neobrutalist-styled digital zines using OpenAI GPT-4
+ * Handles subject validation, prompt injection protection, and structured JSON response generation
+ */
+
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { validateAndSanitizeSubject } from '@/app/utils/validation';
 
+/**
+ * Configure API route to use Node.js runtime for OpenAI SDK compatibility
+ * @type {string}
+ */
 export const runtime = 'nodejs';
 
+/**
+ * Generate a neobrutalist zine about any subject using OpenAI GPT-4o-mini
+ * 
+ * @description This endpoint creates structured zine content with comprehensive security measures:
+ * - Server-side subject validation and sanitization 
+ * - Prompt injection protection with anti-hijacking system prompts
+ * - Structured JSON response with 7 predefined sections
+ * - Error handling for API failures and malformed responses
+ * 
+ * @param {Request} request - Next.js request object containing subject in JSON body
+ * @returns {Promise<NextResponse>} JSON response with zine sections or error message
+ * 
+ * @security 
+ * - Input validation prevents prompt injection attacks (14+ protection patterns)
+ * - System prompt explicitly instructs AI to ignore embedded instructions
+ * - Sanitized subject prevents role hijacking and instruction overrides
+ * - Rate limiting applied via middleware (10 requests/minute per IP)
+ * 
+ * @apiEndpoint POST /api/generate-zine
+ * @requestBody {object} { subject: string } - Topic for zine generation (1-100 chars)
+ * @responseBody {object} Zine data with sections array or error object
+ * 
+ * @errors
+ * - 400 Bad Request: Invalid subject, prompt injection detected, validation failures
+ * - 500 Internal Server Error: Missing API key, OpenAI API failures, JSON parsing errors
+ * 
+ * @dependencies
+ * - Requires OPENAI_API_KEY environment variable
+ * - OpenAI GPT-4o-mini model access
+ * - Validation utility for input sanitization
+ * 
+ * @example
+ * ```typescript
+ * const response = await fetch('/api/generate-zine', {
+ *   method: 'POST',
+ *   headers: { 'Content-Type': 'application/json' },
+ *   body: JSON.stringify({ subject: 'coffee culture' })
+ * });
+ * const zineData = await response.json();
+ * ```
+ */
 export async function POST(request: Request) {
   const { subject } = await request.json();
 
