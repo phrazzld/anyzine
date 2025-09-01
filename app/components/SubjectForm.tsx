@@ -10,12 +10,47 @@ export default function SubjectForm() {
   const [zineData, setZineData] = useState<{ sections: TZineSection[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Client-side validation matching server-side security checks
+  const validateSubject = (input: string) => {
+    const trimmed = input.trim();
+    
+    if (!trimmed) {
+      return "please enter a subject";
+    }
+    if (trimmed.length < 2) {
+      return "subject must be at least 2 characters";
+    }
+    if (trimmed.length > 200) {
+      return "subject must be 200 characters or less";
+    }
+
+    // Check for common prompt injection patterns
+    const dangerousPatterns = [
+      /ignore\s+(all\s+)?(previous|prior|above)\s+instructions?/i,
+      /forget\s+(all\s+)?(previous|prior|above)\s+instructions?/i,
+      /you\s+are\s+(now\s+)?a\s+/i,
+      /pretend\s+(you\s+are|to\s+be)/i,
+      /system\s*[:.]?\s*(prompt|message)/i,
+    ];
+
+    for (const pattern of dangerousPatterns) {
+      if (pattern.test(trimmed)) {
+        return "subject contains invalid patterns";
+      }
+    }
+
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!subject.trim()) {
-      setError("please enter a subject");
+    
+    const validationError = validateSubject(subject);
+    if (validationError) {
+      setError(validationError);
       return;
     }
+    
     setError(null);
     setLoading(true);
     setZineData(null);
@@ -28,7 +63,15 @@ export default function SubjectForm() {
       });
       if (!res.ok) {
         const errData = await res.json();
-        setError(errData.error || "unknown error");
+        
+        // Handle rate limiting with specific feedback
+        if (res.status === 429) {
+          const retryAfter = errData.retryAfter || 60;
+          setError(`Too many requests. Please wait ${retryAfter} seconds before trying again.`);
+        } else {
+          setError(errData.error || "unknown error");
+        }
+        
         setLoading(false);
         return;
       }
@@ -38,6 +81,18 @@ export default function SubjectForm() {
       setError("network error");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Real-time validation as user types
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setSubject(newValue);
+    
+    // Clear error if input is now valid, show error if invalid
+    const validationError = validateSubject(newValue);
+    if (error && !validationError) {
+      setError(null); // Clear error if input becomes valid
     }
   };
 
@@ -55,9 +110,10 @@ export default function SubjectForm() {
           <input
             type="text"
             className="border-2 border-black p-2 text-xl w-full"
-            placeholder="enter a subject"
+            placeholder="enter a subject (max 200 chars)"
             value={subject}
-            onChange={(e) => setSubject(e.target.value)}
+            onChange={handleInputChange}
+            maxLength={250}
           />
           <button
             type="button"
