@@ -1,3 +1,45 @@
+/**
+ * @fileoverview Curated subject suggestions for zine generation
+ * Collection of creative, eclectic, and inspiring topics designed to showcase the AI's creative capabilities
+ */
+
+/**
+ * Array of curated subject suggestions for random zine generation
+ * 
+ * @description Comprehensive collection of creative, unusual, and thought-provoking subjects:
+ * - Blend of sci-fi, fantasy, cyberpunk, and surreal themes
+ * - Designed to inspire creativity and demonstrate AI content generation capabilities  
+ * - Topics range from whimsical to profound, ensuring diverse output possibilities
+ * - Carefully selected to avoid controversial or potentially harmful content
+ * - Each subject provides rich creative potential for zine-worthy content
+ * 
+ * @type {string[]} Array of subject strings (158 total subjects)
+ * 
+ * @usage Used by useSubjectForm hook for random subject selection
+ * @example
+ * ```typescript
+ * import { SUBJECTS } from '@/app/constants';
+ * 
+ * const randomSubject = SUBJECTS[Math.floor(Math.random() * SUBJECTS.length)];
+ * // e.g., "cyberpunk coffee" or "mystical mushrooms"
+ * ```
+ * 
+ * @categories
+ * - Cyberpunk/Tech: cyberpunk coffee, robotic fruit markets, AI sitcoms
+ * - Fantasy/Magic: mystical mushrooms, witchcraft in metaverse, dragon roller derby  
+ * - Sci-Fi/Space: lunar laundromats, intergalactic food trucks, alien pet adoption
+ * - Post-Apocalyptic: post-apocalyptic knitting clubs, dystopian poetry slams
+ * - Surreal/Abstract: time-traveling puppets, chaotic quantum jazz, feral disco balls
+ * - Horror/Gothic: vampire rave etiquette, ghosts of abandoned malls, cosmic horror
+ * - Retro/Vintage: steampunk submarine chronicles, retro-future love letters
+ * 
+ * @design
+ * Subjects intentionally combine unexpected elements to:
+ * - Challenge AI creativity and generate unique content
+ * - Ensure zines are entertaining and engaging
+ * - Provide safe, non-controversial content generation
+ * - Demonstrate the versatility of AI-generated creative writing
+ */
 export const SUBJECTS = [
   "cyberpunk coffee",
   "mystical mushrooms",
