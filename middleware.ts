@@ -49,7 +49,7 @@ function getCSPHeader(): string {
   
   const cspDirectives = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'" + (isDevelopment ? " 'unsafe-eval'" : ""),
+    "script-src 'self' 'unsafe-inline' https://vercel.live" + (isDevelopment ? " 'unsafe-eval'" : ""),
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https:",

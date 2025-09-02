@@ -14,6 +14,13 @@ import { validateAndSanitizeSubject } from '@/app/utils/validation';
 export const runtime = 'nodejs';
 
 /**
+ * Configure maximum function duration for GPT-5 API calls
+ * Extended to 5 minutes to accommodate GPT-5 response times
+ * @type {number}
+ */
+export const maxDuration = 300;
+
+/**
  * Generate a neobrutalist zine about any subject using OpenAI GPT-5
  * 
  * @description This endpoint creates structured zine content with comprehensive security measures:

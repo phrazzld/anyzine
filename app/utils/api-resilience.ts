@@ -12,7 +12,7 @@ const responseCache = new Map<string, CacheEntry>();
 // Cache cleanup interval (5 minutes)
 const CACHE_CLEANUP_INTERVAL = 5 * 60 * 1000;
 const CACHE_TTL = 60 * 60 * 1000; // 1 hour cache TTL
-const REQUEST_TIMEOUT = 30 * 1000; // 30 second timeout
+const REQUEST_TIMEOUT = 300 * 1000; // 5 minute timeout to match Vercel function maxDuration
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY = 1000; // 1 second
 
