@@ -125,7 +125,7 @@ export default function SubjectForm() {
             placeholder="enter a subject (max 200 chars)"
             value={subject}
             onChange={handleInputChangeWithValidation}
-            maxLength={250}
+            maxLength={200}
           />
           <button
             type="button"

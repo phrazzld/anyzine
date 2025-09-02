@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SubjectForm from './SubjectForm';
 
@@ -47,7 +47,7 @@ describe('SubjectForm', () => {
       
       const input = screen.getByPlaceholderText('enter a subject (max 200 chars)');
       expect(input).toHaveAttribute('type', 'text');
-      expect(input).toHaveAttribute('maxLength', '250');
+      expect(input).toHaveAttribute('maxLength', '200');
     });
   });
 
@@ -80,7 +80,8 @@ describe('SubjectForm', () => {
       
       const input = screen.getByPlaceholderText('enter a subject (max 200 chars)');
       const longText = 'a'.repeat(201);
-      await user.type(input, longText);
+      // Use fireEvent.change to bypass HTML maxLength attribute and test server-side validation
+      fireEvent.change(input, { target: { value: longText } });
       
       const createButton = screen.getByRole('button', { name: /create/i });
       await user.click(createButton);

@@ -1,5 +1,22 @@
 # TODO
 
+## Merge Blockers for feature/comprehensive-test-suite
+
+- [x] P0: Align subject length limits and documentation across code and UI | **COMPLETED** ✅
+  ```
+  Work Log:
+  - Fixed UI maxLength: SubjectForm.tsx line 128 changed from 250 → 200 characters
+  - Updated API documentation: route.ts line 35 changed "(1-100 chars)" → "(2-200 chars)"
+  - Fixed test assertion: SubjectForm.test.tsx line 50 updated maxLength expectation to '200'
+  - Modified test approach: Used fireEvent.change instead of user.type to bypass HTML maxLength for server validation testing
+  - Result: UI, server validation, and documentation now consistently enforce 2-200 character limit
+  - All 141 tests pass ✅, build succeeds ✅, no TypeScript errors ✅
+  - P0 merge blocker resolved - feature branch ready for integration
+  ```
+
+---
+
+
 ## Critical Priority - Security Fixes
 
 - [x] Fix dependency vulnerabilities (form-data CVE-2025-3276, Next.js updates) | **COMPLETED** ✅
@@ -15,7 +32,7 @@
   ```
   Work Log:
   - Added comprehensive server-side validation with 14+ prompt injection patterns
-  - Implemented input sanitization (length limits, character filtering, pattern detection)  
+  - Implemented input sanitization (length limits, character filtering, pattern detection)
   - Enhanced OpenAI system prompt with injection defense instructions
   - Added client-side validation with real-time feedback as user types
   - Added HTML maxLength attribute as additional layer of protection
@@ -32,7 +49,7 @@
   - Client-side rate limit feedback with specific retry time display
   - Built successfully - middleware compiles and integrates properly
   - Ready for production use when deployed with proper API key environment
-  ```  
+  ```
 - [x] Add comprehensive test suite foundation (0% coverage currently) | **COMPLETED** ✅
   ```
   Work Log:
@@ -52,7 +69,7 @@
   - Identified 2 locations with `any` usage: TZineSection.content and catch(err: any)
   - Replaced `content: any` with discriminated union for type safety:
     * StringContentSection (banner, subheading, intro, mainArticle, opinion, conclusion)
-    * ArrayContentSection (funFacts with string[] content)  
+    * ArrayContentSection (funFacts with string[] content)
   - Fixed error handling: `catch (err: any)` → `catch (err: unknown)` with proper logging
   - Added TypeScript type guards using `section.type !== 'funFacts'` checks for string content
   - This discovered hidden type safety issues that were masked by `any` usage
@@ -68,7 +85,7 @@
   - Extended existing middleware.ts to add comprehensive CSP headers alongside rate limiting
   - Implemented environment-aware CSP policy: strict for production, dev-friendly for development
   - Added security headers: X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy
-  - Refactored middleware logic to separate concerns: CSP for all routes, rate limiting for API only  
+  - Refactored middleware logic to separate concerns: CSP for all routes, rate limiting for API only
   - Eliminated inline styles in ZineDisplay.tsx (#ff6ee8 → bg-fuchsia-400, #a8ff9b → bg-lime-300)
   - Updated test assertions to match new Tailwind color classes
   - CSP directives protect against: script injection, style injection, object embedding, clickjacking
@@ -96,7 +113,7 @@
   - Successfully imported existing package-lock.json using `pnpm import` command
   - Updated package.json "check" script to use pnpm instead of npm commands
   - All scripts work correctly: lint ✅, test:run (121/121 pass) ✅, build (1.03s) ✅
-  - Lockfile size reduced from 341k (package-lock.json) → 193k (pnpm-lock.yaml) 
+  - Lockfile size reduced from 341k (package-lock.json) → 193k (pnpm-lock.yaml)
   - Install performance: 5.9s with package caching and reuse optimization
   - Verified all dependencies installed correctly with proper peer dependency warnings
   - Removed old package-lock.json after successful migration testing

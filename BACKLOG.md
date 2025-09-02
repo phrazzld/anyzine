@@ -19,6 +19,8 @@
 - [ ] [HIGH] [PERF] Implement OpenAI API resilience (timeout, retry, caching) | Effort: M | Impact: 95% success rate, <10s response time | **Current: No timeout → Target: 30s timeout + 3 retries**
 - [ ] [HIGH] [QUALITY] Add comprehensive JSDoc comments and inline documentation | Effort: M | Quality: 7/10 | **Target: 90% function documentation coverage**
 - [ ] [HIGH] [SIMPLIFY] Remove LoadingSpinner component and inline simple spinner | Effort: S | Reduction: 5% | **Risk: Low** | **Consolidate 8 lines of dedicated component**
+- [ ] [HIGH] [ROBUSTNESS] Validate OpenAI response against schema and handle malformed JSON | Effort: M | Impact: Fewer 500s; safer parsing | **Target: Zod-based schema, return 422/502 with clear error; optional re-prompt/auto-repair**
+- [ ] [HIGH] [QUALITY] Ensure JSON-only generation reliability | Effort: S | Impact: Lower parsing failures | **Target: Reduce temperature or enable JSON mode where available; add tests for malformed output handling**
 
 ## Medium Priority (MEDIUM)
 *Valuable features, simplifications, documentation, performance with metrics*
@@ -31,6 +33,12 @@
 - [ ] [MEDIUM] [A11Y] Add accessibility attributes and semantic HTML elements | Effort: M | Quality: 6/10 | **Target: WCAG 2.1 AA compliance**
 - [ ] [MEDIUM] [INNOVATION] Streaming zine generation with live quality gates | Effort: M | Quality: 9/10 | **Innovation: Progressive content loading + automatic type safety**
 - [ ] [MEDIUM] [FEATURE] Dynamic sections - let each zine decide sections based on subject | Effort: L | Value: More contextually relevant content
+- [ ] [MEDIUM] [SECURITY] Middleware matcher cleanup and documentation | Effort: S | Impact: Clarity | **Target: Remove redundant '/api/generate-zine' matcher or document intent**
+- [ ] [MEDIUM] [SECURITY] CSP header DX improvements | Effort: S | Impact: Dev ergonomics | **Target: Document upgrade-insecure-requests rationale; consider removing legacy X-XSS-Protection**
+- [ ] [MEDIUM] [DX] Adopt packageManager field and update CI to pnpm | Effort: S | Impact: Consistent tooling | **Target: Add "packageManager": "pnpm@<version>", ensure CI uses pnpm**
+- [ ] [MEDIUM] [ROBUSTNESS] Tighten typings in API resilience utilities | Effort: S | Impact: Maintainability | **Target: Strongly-typed error/result shapes; remove untyped any**
+- [ ] [MEDIUM] [SCALABILITY] Rate limiter distributed store option | Effort: M | Impact: Prod-readiness at scale | **Target: Abstract storage; document Redis option for multi-instance deployments**
+- [ ] [MEDIUM] [QUALITY] Clarify validation regex intent and edge cases | Effort: S | Impact: Maintainability | **Target: Improve comments; consider broader backslash normalization**
 - [ ] [MEDIUM] [FEATURE] Dark mode toggle | Effort: S | Value: Better accessibility
 - [ ] [MEDIUM] [DX] Fix ESLint version conflicts and enable strict rules | Effort: S | Impact: Clean development experience | **Target: Resolve ESLint 9 vs TypeScript plugin compatibility**
 

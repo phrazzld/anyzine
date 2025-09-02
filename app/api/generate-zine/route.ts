@@ -32,7 +32,7 @@ export const runtime = 'nodejs';
  * - Rate limiting applied via middleware (10 requests/minute per IP)
  * 
  * @apiEndpoint POST /api/generate-zine
- * @requestBody {object} { subject: string } - Topic for zine generation (1-100 chars)
+ * @requestBody {object} { subject: string } - Topic for zine generation (2-200 chars)
  * @responseBody {object} Zine data with sections array or error object
  * 
  * @errors
