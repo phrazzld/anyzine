@@ -20,6 +20,9 @@ body {
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --checker-color-1: #c026d3; /* fuchsia-400 */
+  --checker-color-2: #fef08a; /* yellow-200 */
+  --checker-color-3: #bef264; /* lime-300 */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -44,5 +47,37 @@ body {
     background-size: 200% 200%;
     animation: diagonalStripes 1s linear infinite;
     color: #fff; /* ensures text is visible over the stripes */
+  }
+
+  @keyframes checkerFade {
+    0%, 100% { 
+      opacity: 0.3; 
+      transform: scale(0.95); 
+    }
+    50% { 
+      opacity: 1; 
+      transform: scale(1); 
+    }
+  }
+
+  .checker-cell {
+    animation: checkerFade 2s ease-in-out infinite;
+    animation-delay: calc(var(--cell-index) * 0.1s);
+    will-change: opacity, transform;
+  }
+
+  .checker-fade-out {
+    animation: checkerFadeOut 150ms ease-out forwards;
+  }
+
+  @keyframes checkerFadeOut {
+    from {
+      opacity: 1;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.95);
+    }
   }
 }

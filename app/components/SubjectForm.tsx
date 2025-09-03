@@ -7,6 +7,7 @@
 
 import React from "react";
 import { ZineDisplay } from "./ZineDisplay";
+import CheckerLoadingState from "./CheckerLoadingState";
 import { useZineGeneration } from "@/app/hooks/useZineGeneration";
 import { useSubjectValidation } from "@/app/hooks/useSubjectValidation";
 import { useSubjectForm } from "@/app/hooks/useSubjectForm";
@@ -154,14 +155,11 @@ export default function SubjectForm() {
       </section>
 
       {/* loading */}
-      {loading && (
-        <div className="p-6 border-2 border-t-0 border-black text-center">
-          <div className="flex justify-center items-center gap-2">
-            <div className="animate-spin w-8 h-8 border-4 border-black border-t-transparent rounded-full"></div>
-            <span className="uppercase font-bold">generating...</span>
-          </div>
-        </div>
-      )}
+      <CheckerLoadingState 
+        isVisible={loading}
+        hasError={!!error}
+        message="CRAFTING YOUR DIGITAL ZINE..."
+      />
 
       {/* error */}
       {error && !loading && (
