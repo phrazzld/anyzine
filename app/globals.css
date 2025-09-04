@@ -66,6 +66,21 @@ body {
     will-change: opacity, transform;
   }
 
+  /* Respect user preference for reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .checker-cell {
+      animation: none;
+      opacity: 0.7;
+      transform: none;
+      will-change: auto;
+    }
+    
+    .checker-fade-out {
+      animation: none;
+      opacity: 0;
+    }
+  }
+
   .checker-fade-out {
     animation: checkerFadeOut 150ms ease-out forwards;
   }
