@@ -5,13 +5,14 @@
  * with retro styling. Designed for the AnyZine application's neobrutalist aesthetic.
  * 
  * Features:
- * - 8x8 desktop grid, 6x6 mobile grid with responsive behavior
+ * - Full viewport coverage with 240 cells (12x20 mobile, 20x12 desktop)
  * - Staggered animation timing for wave-like visual effect
  * - Dynamic color system using CSS custom properties
  * - GPU-optimized animations (60fps performance)
  * - Smooth error state transitions
  * - Retro text overlay with neobrutalist typography
  * - Accessibility: Automatic fallback to simple spinner for reduced motion preference
+ * - Fixed positioning overlay that covers entire screen during loading
  * 
  * Performance:
  * - Uses only GPU-accelerated CSS properties (opacity, transform)
@@ -95,6 +96,10 @@ interface CheckerLoadingStateProps {
    */
   message?: string;
   /** 
+   * Subject of the zine being generated, used to create dynamic messages
+   */
+  subject?: string;
+  /** 
    * Controls component visibility. When false, component is hidden via CSS classes
    * @default true
    */
@@ -131,7 +136,8 @@ interface CheckerLoadingStateProps {
  */
 export default function CheckerLoadingState({ 
   colors = ['var(--checker-color-1, #c026d3)', 'var(--checker-color-2, #fef08a)', 'var(--checker-color-3, #bef264)'],
-  message = 'GENERATING...',
+  message,
+  subject = '',
   isVisible = true,
   hasError = false
 }: CheckerLoadingStateProps) {
@@ -140,6 +146,19 @@ export default function CheckerLoadingState({
   
   // Validate and sanitize colors with fallback protection
   const safeColors = validateCheckerColors(colors);
+  
+  // Generate dynamic message based on subject
+  const displayMessage = message || (
+    subject.trim() 
+      ? `CRAFTING YOUR DIGITAL ZINE ABOUT ${subject.toUpperCase()}...`
+      : 'CRAFTING YOUR DIGITAL ZINE...'
+  );
+  
+  // Handler to change cell color on each animation iteration
+  const handleAnimationIteration = (e: React.AnimationEvent<HTMLDivElement>) => {
+    const newColorIndex = Math.floor(Math.random() * safeColors.length);
+    e.currentTarget.style.backgroundColor = safeColors[newColorIndex];
+  };
   
   // Detect user's motion preferences
   useEffect(() => {
@@ -175,72 +194,88 @@ export default function CheckerLoadingState({
   // Fallback to simple spinner for users who prefer reduced motion
   if (prefersReducedMotion) {
     return (
-      <div className="flex flex-col items-center justify-center h-16 gap-2">
+      <div className="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center gap-2">
         <LoadingSpinner />
-        {message && (
+        {displayMessage && (
           <span className="text-lg font-bold uppercase tracking-widest text-black">
-            {message}
+            {displayMessage}
           </span>
         )}
       </div>
     );
   }
 
-  // Generate responsive checker cells (36 for mobile 6x6, 64 for desktop 8x8)
-  // Use max count of 64 and let CSS grid handle responsive display
-  const checkerCells = Array.from({ length: 64 }, (_, index) => {
-    // Cycle through colors for varied checker pattern
-    const colorIndex = index % safeColors.length;
+  // Calculate cells needed for full viewport coverage
+  // Desktop: ~20 columns x 12 rows = 240 cells
+  // Mobile: ~12 columns x 20 rows = 240 cells  
+  const cellCount = 240;
+  const checkerCells = Array.from({ length: cellCount }, (_, index) => {
+    // Generate random properties for each cell
+    const colorIndex = Math.floor(Math.random() * safeColors.length);
     const backgroundColor = safeColors[colorIndex];
+    
+    // Random animation delay (0-3s) and duration variation
+    const animationDelay = Math.random() * 3;
+    const animationDuration = 1.5 + Math.random() * 1; // 1.5-2.5s
+    
+    // Random initial opacity for more organic feel
+    const initialOpacity = 0.2 + Math.random() * 0.3; // 0.2-0.5
+    
+    // Random animation type (some cells get different animations)
+    const animationType = Math.random();
+    let animationClass = 'checker-cell';
+    if (animationType < 0.6) {
+      animationClass = 'checker-cell'; // Default fade
+    } else if (animationType < 0.8) {
+      animationClass = 'checker-pulse'; // Gentle pulse
+    } else {
+      animationClass = 'checker-shimmer'; // Brightness variation
+    }
+    
+    // Some cells stay static for more organic pattern
+    if (Math.random() < 0.15) {
+      animationClass = 'checker-static';
+    }
     
     return (
       <div
         key={index}
-        className="
+        className={`
           aspect-square
-          border-2 border-black
-          checker-cell
-          hidden md:block
-        "
+          border border-black
+          ${animationClass}
+        `}
         style={{
           '--cell-index': index,
+          '--animation-delay': `${animationDelay}s`,
+          '--animation-duration': `${animationDuration}s`,
+          '--initial-opacity': initialOpacity,
           backgroundColor: backgroundColor,
         } as React.CSSProperties}
+        onAnimationIteration={animationClass !== 'checker-static' ? handleAnimationIteration : undefined}
       />
     );
   });
 
-  // Generate mobile cells (first 36 cells visible on mobile)
-  const mobileCells = checkerCells.slice(0, 36).map((cell) => 
-    React.cloneElement(cell, {
-      ...cell.props,
-      className: cell.props.className.replace('hidden md:block', 'block md:hidden')
-    })
-  );
-
   return (
-    <div className={`p-6 border-2 border-t-0 border-black ${hasError ? 'checker-fade-out' : ''}`}>
-      {/* Checker grid container */}
-      <div className="relative">
-        {/* Responsive Checker grid: 6x6 mobile, 8x8 desktop */}
-        <div className="grid grid-cols-6 md:grid-cols-8 gap-0.5 md:gap-1 w-full max-w-sm md:max-w-md mx-auto">
-          {mobileCells}
-          {checkerCells}
-        </div>
-        
-        {/* Status message overlay */}
-        {message && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="
-              text-lg font-bold uppercase tracking-widest
-              text-white bg-black/90 px-4 py-2 border-2 border-black
-              shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]
-            ">
-              {message}
-            </span>
-          </div>
-        )}
+    <div className={`fixed inset-0 z-50 bg-white ${hasError ? 'checker-fade-out' : ''}`}>
+      {/* Full viewport checker grid */}
+      <div className="grid grid-cols-12 md:grid-cols-20 gap-0 w-full h-full">
+        {checkerCells}
       </div>
+      
+      {/* Status message overlay */}
+      {displayMessage && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="
+            text-xl md:text-2xl font-bold uppercase tracking-widest
+            text-white bg-black/90 px-6 py-3 border-2 border-black
+            shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]
+          ">
+            {displayMessage}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

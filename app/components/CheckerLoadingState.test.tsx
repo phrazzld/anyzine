@@ -46,9 +46,9 @@ describe('CheckerLoadingState', () => {
     it('should render checker grid cells', () => {
       const { container } = render(<CheckerLoadingState />);
       
-      // Should render 64 desktop cells (hidden on mobile) + 36 mobile cells (hidden on desktop)
+      // Should render 240 cells for full viewport coverage
       const checkerCells = container.querySelectorAll('.checker-cell');
-      expect(checkerCells).toHaveLength(100); // 64 + 36 = 100 total cells
+      expect(checkerCells).toHaveLength(240);
     });
   });
 
@@ -123,42 +123,45 @@ describe('CheckerLoadingState', () => {
     });
   });
 
-  describe('Responsive behavior', () => {
-    it('should have responsive grid classes', () => {
+  describe('Full viewport behavior', () => {
+    it('should have full viewport grid classes', () => {
       const { container } = render(<CheckerLoadingState />);
       
       const gridContainer = container.querySelector('.grid');
-      expect(gridContainer).toHaveClass('grid-cols-6', 'md:grid-cols-8');
+      expect(gridContainer).toHaveClass('grid-cols-12', 'md:grid-cols-20');
     });
 
-    it('should render mobile cells (6x6 grid)', () => {
+    it('should have fixed positioning for full screen overlay', () => {
       const { container } = render(<CheckerLoadingState />);
       
-      // Mobile cells should be visible on mobile (block) and hidden on desktop (md:hidden)
-      const mobileCells = container.querySelectorAll('.block.md\\:hidden');
-      expect(mobileCells).toHaveLength(36); // 6x6 = 36 cells
+      const wrapperContainer = container.firstChild as HTMLElement;
+      expect(wrapperContainer).toHaveClass('fixed', 'inset-0', 'z-50');
     });
 
-    it('should render desktop cells (8x8 grid)', () => {
-      const { container } = render(<CheckerLoadingState />);
-      
-      // Desktop cells should be hidden on mobile and visible on desktop
-      const desktopCells = container.querySelectorAll('.hidden.md\\:block');
-      expect(desktopCells).toHaveLength(64); // 8x8 = 64 cells
-    });
-
-    it('should have responsive gap classes', () => {
+    it('should have full width and height grid', () => {
       const { container } = render(<CheckerLoadingState />);
       
       const gridContainer = container.querySelector('.grid');
-      expect(gridContainer).toHaveClass('gap-0.5', 'md:gap-1');
+      expect(gridContainer).toHaveClass('w-full', 'h-full');
     });
 
-    it('should have responsive max-width classes', () => {
+    it('should have no gaps between cells', () => {
       const { container } = render(<CheckerLoadingState />);
       
       const gridContainer = container.querySelector('.grid');
-      expect(gridContainer).toHaveClass('max-w-sm', 'md:max-w-md');
+      expect(gridContainer).toHaveClass('gap-0');
+    });
+
+    it('should render all cells uniformly', () => {
+      const { container } = render(<CheckerLoadingState />);
+      
+      // All 240 cells should have the same base classes
+      const allCells = container.querySelectorAll('.checker-cell');
+      expect(allCells).toHaveLength(240);
+      
+      // Verify first few cells have expected classes
+      expect(allCells[0]).toHaveClass('aspect-square', 'border', 'border-black', 'checker-cell');
+      expect(allCells[1]).toHaveClass('aspect-square', 'border', 'border-black', 'checker-cell');
     });
   });
 
@@ -353,9 +356,9 @@ describe('CheckerLoadingState', () => {
       const { container: container2 } = render(<CheckerLoadingState colors={['red']} />);
       const { container: container3 } = render(<CheckerLoadingState message="custom" />);
       
-      expect(container1.querySelectorAll('.checker-cell')).toHaveLength(100);
-      expect(container2.querySelectorAll('.checker-cell')).toHaveLength(100);
-      expect(container3.querySelectorAll('.checker-cell')).toHaveLength(100);
+      expect(container1.querySelectorAll('.checker-cell')).toHaveLength(240);
+      expect(container2.querySelectorAll('.checker-cell')).toHaveLength(240);
+      expect(container3.querySelectorAll('.checker-cell')).toHaveLength(240);
     });
   });
 
@@ -497,7 +500,7 @@ describe('CheckerLoadingState', () => {
       // Should see checker cells, not the loading spinner
       expect(screen.getByText('GENERATING...')).toBeInTheDocument();
       // Should have checker grid container
-      const checkerGrid = document.querySelector('.grid.grid-cols-6.md\\:grid-cols-8');
+      const checkerGrid = document.querySelector('.grid.grid-cols-12.md\\:grid-cols-20');
       expect(checkerGrid).toBeInTheDocument();
     });
 
@@ -522,7 +525,7 @@ describe('CheckerLoadingState', () => {
         expect(document.querySelector('.animate-spin')).toBeInTheDocument();
         expect(screen.getByText('CRAFTING...')).toBeInTheDocument();
         // Should NOT have checker grid container
-        expect(document.querySelector('.grid.grid-cols-6.md\\:grid-cols-8')).not.toBeInTheDocument();
+        expect(document.querySelector('.grid.grid-cols-12.md\\:grid-cols-20')).not.toBeInTheDocument();
       });
     });
 
@@ -548,7 +551,7 @@ describe('CheckerLoadingState', () => {
       render(<CheckerLoadingState />);
       
       // Initially should show checker grid
-      expect(document.querySelector('.grid.grid-cols-6.md\\:grid-cols-8')).toBeInTheDocument();
+      expect(document.querySelector('.grid.grid-cols-12.md\\:grid-cols-20')).toBeInTheDocument();
       
       // Simulate media query change to prefer reduced motion
       if (mediaQueryCallback) {
