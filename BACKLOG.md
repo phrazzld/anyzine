@@ -52,6 +52,18 @@
 - [ ] [MEDIUM] [FEATURE] Dark mode toggle | Effort: S | Value: Better accessibility
 - [ ] [MEDIUM] [DX] Fix ESLint version conflicts and enable strict rules | Effort: S | Impact: Clean development experience | **Target: Resolve ESLint 9 vs TypeScript plugin compatibility**
 
+
+### Neobrutalist loading feature follow-ups
+- [ ] [MEDIUM] [A11Y] CheckerLoadingState: add role="status" and aria-live="polite" to the message overlay; consider inert/aria-hidden on background UI during loading | Effort: S | Impact: Better SR experience
+- [ ] [MEDIUM] [PERF] EmptyStateGrid: reduce DOM load (e.g., 8x8 or CSS-only background) instead of 240 animated cells | Effort: S-M | Impact: Lower CPU/GPU usage on idle screens
+- [ ] [MEDIUM] [PERF] CheckerLoadingState: memoize generated cell config to avoid re-randomizing on each re-render | Effort: S | Impact: Fewer layout/paint operations
+- [ ] [MEDIUM] [DX] SubjectForm: extract a shared FormBar component to remove duplicated form markup between empty/non-empty states | Effort: S | Impact: Easier maintenance, fewer brittle tests
+- [ ] [MEDIUM] [UX] SubjectCarousel: decide behavior vs docs — either update docs to "populate only" or add optional onSelectAndGenerate to trigger generation | Effort: S | Impact: Consistency
+- [ ] [MEDIUM] [ROBUSTNESS] SubjectCarousel: clear pending typing timeout on unmount to prevent leaks | Effort: XS | Impact: Stability
+- [ ] [MEDIUM] [TESTING] Make UI tests less brittle: assert public behavior (overlay presence, cell count) instead of internal Tailwind class lists; provide stable selectors | Effort: S-M | Impact: Durable tests
+- [ ] [MEDIUM] [DX] Option: always include a stable base class on checker cells (e.g., checker-cell plus variant) to simplify testing | Effort: XS | Impact: Test reliability
+- [ ] [MEDIUM] [PERF] SUBJECTS list: reduce client bundle impact (trim list, lazy-load, or generate on client) | Effort: M | Impact: Smaller bundle
+- [ ] [MEDIUM] [PERF] Fonts: migrate Google Fonts @import to next/font for optimized loading | Effort: S | Impact: Better performance
 ## Low Priority (LOW)
 *Nice-to-have features, minor optimizations, future-proofing*
 

@@ -170,7 +170,7 @@ describe('SubjectForm', () => {
       await user.type(input, 'test subject');
       await user.click(createButton);
 
-      expect(screen.getByText('generating...')).toBeInTheDocument();
+      expect(screen.getByText(/CRAFTING YOUR DIGITAL ZINE/i)).toBeInTheDocument();
     });
 
     it('should make correct API call with valid input', async () => {
@@ -300,7 +300,7 @@ describe('SubjectForm', () => {
       await user.click(createButton);
 
       // Should show loading state, not previous zine
-      expect(screen.getByText('generating...')).toBeInTheDocument();
+      expect(screen.getByText(/CRAFTING YOUR DIGITAL ZINE/i)).toBeInTheDocument();
       expect(screen.queryByText('TEST BANNER')).not.toBeInTheDocument();
     });
 
@@ -341,7 +341,7 @@ describe('SubjectForm', () => {
       await user.type(input, 'test subject');
       await user.click(createButton);
 
-      expect(screen.getByText('generating...')).toBeInTheDocument();
+      expect(screen.getByText(/CRAFTING YOUR DIGITAL ZINE/i)).toBeInTheDocument();
       // The spinner div should be present
       expect(document.querySelector('.animate-spin')).toBeInTheDocument();
     });

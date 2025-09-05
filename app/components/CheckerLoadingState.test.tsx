@@ -27,14 +27,14 @@ describe('CheckerLoadingState', () => {
     it('should render with default props', () => {
       render(<CheckerLoadingState />);
       
-      expect(screen.getByText('GENERATING...')).toBeInTheDocument();
+      expect(screen.getByText('CRAFTING YOUR DIGITAL ZINE...')).toBeInTheDocument();
     });
 
     it('should render with custom message', () => {
-      render(<CheckerLoadingState message="CRAFTING YOUR DIGITAL ZINE..." />);
+      render(<CheckerLoadingState message="CUSTOM MESSAGE" />);
       
-      expect(screen.getByText('CRAFTING YOUR DIGITAL ZINE...')).toBeInTheDocument();
-      expect(screen.queryByText('GENERATING...')).not.toBeInTheDocument();
+      expect(screen.getByText('CUSTOM MESSAGE')).toBeInTheDocument();
+      expect(screen.queryByText('CRAFTING YOUR DIGITAL ZINE...')).not.toBeInTheDocument();
     });
 
     it('should not render when not visible', () => {
@@ -201,7 +201,7 @@ describe('CheckerLoadingState', () => {
     it('should apply retro shadow styling to message', () => {
       render(<CheckerLoadingState />);
       
-      const messageElement = screen.getByText('GENERATING...');
+      const messageElement = screen.getByText('CRAFTING YOUR DIGITAL ZINE...');
       expect(messageElement).toHaveClass('shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]');
     });
 
@@ -215,7 +215,7 @@ describe('CheckerLoadingState', () => {
     it('should position message overlay correctly', () => {
       render(<CheckerLoadingState />);
       
-      const messageOverlay = screen.getByText('GENERATING...').closest('div');
+      const messageOverlay = screen.getByText('CRAFTING YOUR DIGITAL ZINE...').closest('div');
       expect(messageOverlay).toHaveClass('absolute', 'inset-0', 'flex', 'items-center', 'justify-center');
     });
   });
@@ -278,14 +278,14 @@ describe('CheckerLoadingState', () => {
       rerender(<CheckerLoadingState isVisible={true} hasError={true} />);
       
       // Should still be visible during transition
-      expect(screen.getByText('GENERATING...')).toBeInTheDocument();
+      expect(screen.getByText('CRAFTING YOUR DIGITAL ZINE...')).toBeInTheDocument();
       
       // Fast-forward timer
       vi.advanceTimersByTime(150);
       
       // Should complete transition
       await waitFor(() => {
-        expect(screen.getByText('GENERATING...')).toBeInTheDocument();
+        expect(screen.getByText('CRAFTING YOUR DIGITAL ZINE...')).toBeInTheDocument();
       });
     });
 
@@ -366,7 +366,7 @@ describe('CheckerLoadingState', () => {
     it('should provide proper contrast for message text', () => {
       render(<CheckerLoadingState />);
       
-      const messageElement = screen.getByText('GENERATING...');
+      const messageElement = screen.getByText('CRAFTING YOUR DIGITAL ZINE...');
       expect(messageElement).toHaveClass('text-white', 'bg-black/90');
     });
 
@@ -498,7 +498,7 @@ describe('CheckerLoadingState', () => {
       render(<CheckerLoadingState />);
       
       // Should see checker cells, not the loading spinner
-      expect(screen.getByText('GENERATING...')).toBeInTheDocument();
+      expect(screen.getByText('CRAFTING YOUR DIGITAL ZINE...')).toBeInTheDocument();
       // Should have checker grid container
       const checkerGrid = document.querySelector('.grid.grid-cols-12.md\\:grid-cols-20');
       expect(checkerGrid).toBeInTheDocument();

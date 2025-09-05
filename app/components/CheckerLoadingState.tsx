@@ -92,7 +92,7 @@ interface CheckerLoadingStateProps {
   colors?: string[];
   /** 
    * Status message displayed over the checker pattern in retro styling
-   * @default 'GENERATING...'
+   * @default 'CRAFTING YOUR DIGITAL ZINE...'
    */
   message?: string;
   /** 
