@@ -33,16 +33,19 @@ describe('SubjectForm', () => {
   });
 
   describe('Initial render', () => {
-    it('should render the form with all elements', () => {
+    it('should render the empty state with floating form and carousel', () => {
       render(<SubjectForm />);
 
+      // Empty state should show floating form (no random button) and carousel
       expect(screen.getByPlaceholderText('enter a subject (max 200 chars)')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /random/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /create/i })).toBeInTheDocument();
-      expect(screen.getByText('no zine yet. enter a subject above or click random.')).toBeInTheDocument();
+      expect(screen.getByText(/CRAFT A ZINE ABOUT/i)).toBeInTheDocument();
+      
+      // Random button should NOT be present in empty state
+      expect(screen.queryByRole('button', { name: /random/i })).not.toBeInTheDocument();
     });
 
-    it('should have correct input attributes', () => {
+    it('should have correct input attributes in empty state', () => {
       render(<SubjectForm />);
       
       const input = screen.getByPlaceholderText('enter a subject (max 200 chars)');
@@ -106,15 +109,17 @@ describe('SubjectForm', () => {
     it('should clear error when input becomes valid', async () => {
       render(<SubjectForm />);
       
-      const input = screen.getByPlaceholderText('enter a subject (max 200 chars)');
       const createButton = screen.getByRole('button', { name: /create/i });
 
-      // First create an error
+      // First create an error (this transitions to error state)
       await user.click(createButton);
       expect(screen.getByText('please enter a subject')).toBeInTheDocument();
 
-      // Then fix it
-      await user.type(input, 'valid subject');
+      // Get the input from the error state (it may be a different input now)
+      const errorStateInput = screen.getByPlaceholderText('enter a subject (max 200 chars)');
+      
+      // Then fix it by typing
+      await user.type(errorStateInput, 'valid subject');
       
       // Error should be cleared
       expect(screen.queryByText('please enter a subject')).not.toBeInTheDocument();
@@ -125,28 +130,41 @@ describe('SubjectForm', () => {
     it('should populate input with random subject when random button clicked', async () => {
       render(<SubjectForm />);
       
-      const input = screen.getByPlaceholderText('enter a subject (max 200 chars)');
+      const createButton = screen.getByRole('button', { name: /create/i });
+      
+      // First create an error state to make random button appear
+      await user.click(createButton);
+      expect(screen.getByText('please enter a subject')).toBeInTheDocument();
+      
+      // Now get the random button
       const randomButton = screen.getByRole('button', { name: /random/i });
-
+      
       await user.click(randomButton);
 
-      // Should have one of the mocked subjects
-      const inputValue = (input as HTMLInputElement).value;
-      expect(['test subject 1', 'test subject 2', 'cyberpunk coffee']).toContain(inputValue);
+      // After clicking random, component transitions back to empty state with new input
+      // Wait for the transition and check the new input's value
+      await waitFor(() => {
+        // Get the input from the new state (empty state with floating form)
+        const currentInput = screen.getByPlaceholderText('enter a subject (max 200 chars)');
+        const inputValue = (currentInput as HTMLInputElement).value;
+        expect(['test subject 1', 'test subject 2', 'cyberpunk coffee']).toContain(inputValue);
+      });
     });
 
     it('should clear error when random subject is selected', async () => {
       render(<SubjectForm />);
       
       const createButton = screen.getByRole('button', { name: /create/i });
-      const randomButton = screen.getByRole('button', { name: /random/i });
 
-      // Create an error
+      // Create an error first (this makes random button appear)
       await user.click(createButton);
       expect(screen.getByText('please enter a subject')).toBeInTheDocument();
 
-      // Click random should clear error
+      // Now random button should be visible
+      const randomButton = screen.getByRole('button', { name: /random/i });
       await user.click(randomButton);
+      
+      // Error should be cleared
       expect(screen.queryByText('please enter a subject')).not.toBeInTheDocument();
     });
   });
@@ -294,10 +312,16 @@ describe('SubjectForm', () => {
         expect(screen.getByText('TEST BANNER')).toBeInTheDocument();
       });
 
-      // Clear input and generate new zine
-      await user.clear(input);
-      await user.type(input, 'second subject');
-      await user.click(createButton);
+      // Get input from the new state (now showing zine, so form is visible)
+      const dataStateInput = screen.getByPlaceholderText('enter a subject (max 200 chars)');
+      
+      // Clear and type new subject
+      await user.clear(dataStateInput);
+      await user.type(dataStateInput, 'second subject');
+      
+      // Get the create button from current state
+      const dataStateCreateButton = screen.getByRole('button', { name: /create/i });
+      await user.click(dataStateCreateButton);
 
       // Should show loading state, not previous zine
       expect(screen.getByText(/CRAFTING YOUR DIGITAL ZINE/i)).toBeInTheDocument();
@@ -318,15 +342,29 @@ describe('SubjectForm', () => {
   });
 
   describe('Accessibility', () => {
-    it('should have proper form structure', () => {
+    it('should have proper form structure in empty state', () => {
       render(<SubjectForm />);
       
+      // Empty state: input + create button + carousel (no random button)
+      expect(screen.getByRole('textbox')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /create/i })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /random/i })).not.toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /CRAFT A ZINE ABOUT/i })).toBeInTheDocument();
+    });
+    
+    it('should have proper form structure with random button in error state', async () => {
+      render(<SubjectForm />);
+      
+      const createButton = screen.getByRole('button', { name: /create/i });
+      await user.click(createButton);
+      
+      // Error state: input + random button + create button
       expect(screen.getByRole('textbox')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /random/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /create/i })).toBeInTheDocument();
     });
 
-    it('should show loading indicator with proper semantics', async () => {
+    it('should show CheckerLoadingState during loading', async () => {
       mockResilientZineGeneration.mockImplementation(() => 
         new Promise(resolve => setTimeout(() => resolve({
           sections: []
@@ -341,9 +379,11 @@ describe('SubjectForm', () => {
       await user.type(input, 'test subject');
       await user.click(createButton);
 
+      // Should show CheckerLoadingState with loading message
       expect(screen.getByText(/CRAFTING YOUR DIGITAL ZINE/i)).toBeInTheDocument();
-      // The spinner div should be present
-      expect(document.querySelector('.animate-spin')).toBeInTheDocument();
+      // CheckerLoadingState creates a grid of checker cells
+      const checkerGrid = document.querySelector('.grid');
+      expect(checkerGrid).toBeInTheDocument();
     });
   });
 });

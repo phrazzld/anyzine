@@ -312,7 +312,7 @@ describe('CheckerLoadingState', () => {
 
   describe('Message rendering', () => {
     it('should not render message when empty string provided', () => {
-      const { container } = render(<CheckerLoadingState message="" />);
+      render(<CheckerLoadingState message="" />);
       
       // Empty message means default message is used
       expect(screen.getByText('CRAFTING YOUR DIGITAL ZINE...')).toBeInTheDocument();

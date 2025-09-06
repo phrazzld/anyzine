@@ -26,8 +26,18 @@
   - Updated message overlay tests for correct default message
   - Result: All 48 CheckerLoadingState tests now passing (was 17 failures)
   ```
-- [ ] [BLOCKER] [TESTS] Update SubjectForm tests for the new empty-state and loading UX:
+- [x] [BLOCKER] [TESTS] Update SubjectForm tests for the new empty-state and loading UX:
   - Remove legacy empty-state copy assertions (e.g., "no zine yet...")
   - Assert presence of the floating top form and the SubjectCarousel in empty state
   - Update loading assertions to check the full-screen checker overlay message (or ARIA role="status" once added)
+  ```
+  Work Log:
+  - Updated 20 SubjectForm tests to handle conditional rendering (empty vs standard state)
+  - Fixed Initial render: Now tests empty state (floating form + carousel, no random button)
+  - Fixed Random functionality: Tests now trigger error state first to show random button
+  - Fixed Accessibility: Updated loading tests to check CheckerLoadingState instead of .animate-spin
+  - Fixed state transitions: Random button click transitions back to empty state with new input element
+  - Key insight: Component has two different input elements in different states - tests must get current input
+  - Result: All 20/20 SubjectForm tests now passing (was 7 failures initially)
+  ```
 
