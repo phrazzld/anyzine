@@ -19,6 +19,7 @@ import { resilientZineGeneration, clearZineCache } from "@/app/utils/api-resilie
  * 
  * @returns {object} Hook interface with state and control functions
  * @returns {boolean} returns.loading - True during API request, false otherwise
+ * @returns {boolean} returns.formDisabled - True when form should be disabled (synchronized with loading)
  * @returns {string|null} returns.error - Error message or null if no error
  * @returns {object|null} returns.zineData - Generated zine with sections array or null
  * @returns {function} returns.generateZine - Async function to generate zine from subject
@@ -27,7 +28,7 @@ import { resilientZineGeneration, clearZineCache } from "@/app/utils/api-resilie
  * 
  * @example
  * ```tsx
- * const { loading, error, zineData, generateZine, clearError } = useZineGeneration();
+ * const { loading, formDisabled, error, zineData, generateZine, clearError } = useZineGeneration();
  * 
  * const handleSubmit = async () => {
  *   await generateZine('coffee culture');
@@ -119,6 +120,7 @@ export const useZineGeneration = () => {
 
   return {
     loading,
+    formDisabled: loading,
     error,
     zineData,
     generateZine,

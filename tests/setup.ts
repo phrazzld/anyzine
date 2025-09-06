@@ -34,6 +34,21 @@ afterEach(() => {
 // Mock environment variables for testing
 beforeAll(() => {
   process.env.OPENAI_API_KEY = 'test-api-key';
+  
+  // Mock window.matchMedia for components that check reduced motion preferences
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: vi.fn().mockImplementation(query => ({
+      matches: false, // Default to no reduced motion
+      media: query,
+      onchange: null,
+      addListener: vi.fn(), // Deprecated
+      removeListener: vi.fn(), // Deprecated
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
 });
 
 afterAll(() => {

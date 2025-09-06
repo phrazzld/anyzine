@@ -7,6 +7,9 @@
 
 import React from "react";
 import { ZineDisplay } from "./ZineDisplay";
+import CheckerLoadingState from "./CheckerLoadingState";
+import EmptyStateGrid from "./EmptyStateGrid";
+import SubjectCarousel from "./SubjectCarousel";
 import { useZineGeneration } from "@/app/hooks/useZineGeneration";
 import { useSubjectValidation } from "@/app/hooks/useSubjectValidation";
 import { useSubjectForm } from "@/app/hooks/useSubjectForm";
@@ -60,7 +63,7 @@ import { useSubjectForm } from "@/app/hooks/useSubjectForm";
 export default function SubjectForm() {
   const { loading, error, zineData, generateZine, clearError } = useZineGeneration();
   const { validateSubject } = useSubjectValidation();
-  const { subject, handleInputChange, handleRandom } = useSubjectForm();
+  const { subject, setSubject, handleInputChange, handleRandom } = useSubjectForm();
 
   /**
    * Handle form submission and initiate zine generation
@@ -115,71 +118,122 @@ export default function SubjectForm() {
     clearError();
   };
 
+  /**
+   * Handle subject selection from the carousel
+   * 
+   * @param {string} selectedSubject - Subject selected from rotating carousel
+   * 
+   * @description Sets the input field with carousel selection:
+   * - Populates input with selected subject
+   * - Clears any existing errors
+   * - Provides seamless flow from inspiration to generation
+   */
+  const handleSubjectSelect = (selectedSubject: string) => {
+    setSubject(selectedSubject);
+    clearError();
+  };
+
   return (
-    <div className="w-full">
-      <section className="p-6 border-2 border-black">
-        <form className="flex gap-2 items-center" onSubmit={handleSubmit}>
-          <input
-            type="text"
-            className="border-2 border-black p-2 text-xl w-full"
-            placeholder="enter a subject (max 200 chars)"
-            value={subject}
-            onChange={handleInputChangeWithValidation}
-            maxLength={200}
-          />
-          <button
-            type="button"
-            onClick={handleRandomWithClear}
-            className="
-              border-2 border-black bg-gray-200 text-black px-4 py-2 uppercase font-bold
-              transition-transform transform-gpu duration-150
-              hover:-translate-y-1
-              active:translate-y-1
-            "
-          >
-            random
-          </button>
-          <button
-            type="submit"
-            className="
-              border-2 border-black bg-violet-600 text-white px-4 py-2 uppercase font-bold
-              transition-transform transform-gpu duration-150
-              hover:-translate-y-1
-              active:translate-y-1
-            "
-          >
-            create
-          </button>
-        </form>
-      </section>
+    <div className="min-h-screen flex flex-col">
+      {/* Form section - visible when not in empty state */}
+      {(loading || error || zineData) && (
+        <section className="border-2 border-black">
+          <form className="flex gap-2 items-center p-2" onSubmit={handleSubmit}>
+            <input
+              type="text"
+              className="border-2 border-black p-2 text-xl w-full"
+              placeholder="enter a subject (max 200 chars)"
+              value={subject}
+              onChange={handleInputChangeWithValidation}
+              maxLength={200}
+            />
+            <button
+              type="button"
+              onClick={handleRandomWithClear}
+              className="
+                border-2 border-black bg-gray-200 text-black px-4 py-2 uppercase font-bold
+                transition-transform transform-gpu duration-150
+                hover:-translate-y-1
+                active:translate-y-1
+              "
+            >
+              random
+            </button>
+            <button
+              type="submit"
+              className="
+                border-2 border-black bg-violet-600 text-white px-4 py-2 uppercase font-bold
+                transition-transform transform-gpu duration-150
+                hover:-translate-y-1
+                active:translate-y-1
+              "
+            >
+              create
+            </button>
+          </form>
+        </section>
+      )}
 
       {/* loading */}
-      {loading && (
-        <div className="p-6 border-2 border-t-0 border-black text-center">
-          <div className="flex justify-center items-center gap-2">
-            <div className="animate-spin w-8 h-8 border-4 border-black border-t-transparent rounded-full"></div>
-            <span className="uppercase font-bold">generating...</span>
+      <CheckerLoadingState 
+        isVisible={loading}
+        hasError={!!error}
+        subject={subject}
+      />
+
+      {/* enhanced empty state - full viewport */}
+      {!zineData && !loading && !error && (
+        <div className="flex-1 relative overflow-hidden">
+          {/* Full viewport background grid */}
+          <EmptyStateGrid />
+          
+          {/* Floating form bar at top */}
+          <div className="absolute top-0 left-0 right-0 z-20 bg-white/95 backdrop-blur-sm border-b-2 border-black shadow-[0_2px_0_0_rgba(0,0,0,1)]">
+            <form className="flex gap-0 items-stretch" onSubmit={handleSubmit}>
+              <input
+                type="text"
+                className="border-y-2 border-l-2 border-black p-3 text-2xl w-full"
+                placeholder="enter a subject (max 200 chars)"
+                value={subject}
+                onChange={handleInputChangeWithValidation}
+                maxLength={200}
+              />
+              <button
+                type="submit"
+                className="
+                  border-y-2 border-r-2 border-black bg-violet-600 text-white px-6 py-3 uppercase font-bold
+                  transition-transform transform-gpu duration-150
+                  hover:-translate-y-1
+                  active:translate-y-1
+                "
+              >
+                create
+              </button>
+            </form>
+          </div>
+          
+          {/* Centered carousel with top padding for form */}
+          <div className="relative z-10 flex items-center justify-center h-full pt-36">
+            <SubjectCarousel onSubjectSelect={handleSubjectSelect} />
           </div>
         </div>
       )}
 
-      {/* error */}
+      {/* error state */}
       {error && !loading && (
-        <div className="p-6 border-2 border-red-500 bg-red-100 text-red-800 text-center text-sm rounded">
-          {error}
+        <div className="flex-1 p-6">
+          <div className="p-6 border-2 border-red-500 bg-red-100 text-red-800 text-center text-sm rounded">
+            {error}
+          </div>
         </div>
       )}
 
-      {/* empty */}
-      {!zineData && !loading && !error && (
-        <div className="p-6 border-2 border-t-0 border-black text-center flex flex-col items-center">
-          <span className="text-4xl mb-2">🤔</span>
-          <p>no zine yet. enter a subject above or click random.</p>
+      {/* zine content */}
+      {zineData && (
+        <div className="flex-1">
+          <ZineDisplay sections={zineData.sections} />
         </div>
       )}
-
-      {/* zine */}
-      {zineData && <ZineDisplay sections={zineData.sections} />}
     </div>
   );
 }

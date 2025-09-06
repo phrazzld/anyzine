@@ -20,6 +20,9 @@ body {
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --checker-color-1: #c026d3; /* fuchsia-400 */
+  --checker-color-2: #fef08a; /* yellow-200 */
+  --checker-color-3: #bef264; /* lime-300 */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -44,5 +47,140 @@ body {
     background-size: 200% 200%;
     animation: diagonalStripes 1s linear infinite;
     color: #fff; /* ensures text is visible over the stripes */
+  }
+
+  @keyframes checkerFade {
+    0%, 100% { 
+      opacity: 0.3; 
+      transform: scale(0.95); 
+    }
+    50% { 
+      opacity: 1; 
+      transform: scale(1); 
+    }
+  }
+
+  @keyframes checkerPulse {
+    0%, 100% { 
+      opacity: 0.3;
+    }
+    50% { 
+      opacity: 0.8;
+    }
+  }
+
+  @keyframes checkerShimmer {
+    0%, 100% { 
+      opacity: 0.3;
+      filter: brightness(1);
+    }
+    50% { 
+      opacity: 0.7;
+      filter: brightness(1.2);
+    }
+  }
+
+  /* Empty state animations - ultra subtle for background */
+  @keyframes emptyPulse {
+    0%, 100% { 
+      opacity: 0.08;
+    }
+    50% { 
+      opacity: 0.15;
+    }
+  }
+
+  @keyframes emptyPop {
+    0%, 85%, 100% { 
+      opacity: 0.08;
+    }
+    90%, 95% { 
+      opacity: 0.25;
+    }
+  }
+
+  .checker-cell {
+    animation: checkerFade var(--animation-duration, 2s) ease-in-out infinite;
+    animation-delay: var(--animation-delay, calc(var(--cell-index) * 0.1s));
+    opacity: var(--initial-opacity, 0.3);
+    will-change: opacity, transform;
+  }
+
+  .checker-pulse {
+    animation: checkerPulse var(--animation-duration, 2.5s) ease-in-out infinite;
+    animation-delay: var(--animation-delay, calc(var(--cell-index) * 0.1s));
+    opacity: var(--initial-opacity, 0.4);
+    will-change: opacity;
+  }
+
+  .checker-shimmer {
+    animation: checkerShimmer var(--animation-duration, 2s) ease-in-out infinite;
+    animation-delay: var(--animation-delay, calc(var(--cell-index) * 0.1s));
+    opacity: var(--initial-opacity, 0.3);
+    will-change: opacity, filter;
+  }
+
+  .checker-static {
+    opacity: var(--initial-opacity, 0.3);
+    animation: none;
+  }
+
+  /* Empty state grid styling */
+  .empty-pulse {
+    opacity: 0.08; /* Initial opacity to prevent flash */
+    animation: emptyPulse var(--pulse-duration, 2s) ease-in-out infinite;
+    animation-delay: var(--pulse-delay, 0s);
+    will-change: opacity;
+  }
+
+  /* Add pop animation when specified */
+  .empty-pulse[style*="--pop-delay"]:not([style*="--pop-delay: none"]) {
+    animation: 
+      emptyPulse var(--pulse-duration, 2s) ease-in-out infinite,
+      emptyPop 6s ease-in-out infinite var(--pop-delay, 1s);
+  }
+
+  /* Respect user preference for reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .checker-cell,
+    .checker-pulse,
+    .checker-shimmer {
+      animation: none;
+      opacity: 0.7;
+      transform: none;
+      filter: none;
+      will-change: auto;
+    }
+    
+    .checker-static {
+      opacity: 0.5;
+    }
+    
+    .checker-fade-out {
+      animation: none;
+      opacity: 0;
+    }
+
+    /* Disable empty state animations for reduced motion */
+    .empty-pulse {
+      animation: none;
+      opacity: 0.1;
+      will-change: auto;
+    }
+  }
+
+  .checker-fade-out {
+    animation: checkerFadeOut 150ms ease-out forwards;
+  }
+
+  @keyframes checkerFadeOut {
+    from {
+      opacity: 1;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.95);
+    }
   }
 }
