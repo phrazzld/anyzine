@@ -21,6 +21,8 @@
     "check": "pnpm run lint && pnpm run test:run && pnpm run build"
   },
   "dependencies": {
+    "@clerk/nextjs": "^6.31.9",
+    "convex": "^1.26.2",
     "dompurify": "^3.2.6",
     "next": "^15.5.2",
     "openai": "^4.77.0",

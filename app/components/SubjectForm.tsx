@@ -10,6 +10,7 @@ import { ZineDisplay } from "./ZineDisplay";
 import CheckerLoadingState from "./CheckerLoadingState";
 import EmptyStateGrid from "./EmptyStateGrid";
 import SubjectCarousel from "./SubjectCarousel";
+import { RateLimitIndicator } from "./RateLimitIndicator";
 import { useZineGeneration } from "@/app/hooks/useZineGeneration";
 import { useSubjectValidation } from "@/app/hooks/useSubjectValidation";
 import { useSubjectForm } from "@/app/hooks/useSubjectForm";
@@ -135,6 +136,11 @@ export default function SubjectForm() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Rate limit indicator - always visible */}
+      <div className="max-w-md mx-auto mt-4">
+        <RateLimitIndicator />
+      </div>
+      
       {/* Form section - visible when not in empty state */}
       {(loading || error || zineData) && (
         <section className="border-2 border-black">

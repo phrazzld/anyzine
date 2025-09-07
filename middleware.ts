@@ -1,24 +1,44 @@
 /**
- * @fileoverview Next.js middleware for rate limiting and comprehensive security headers
- * Provides DoS protection, XSS prevention, and content security policy enforcement
+ * @fileoverview Next.js middleware for authentication, rate limiting and comprehensive security headers
+ * Provides Clerk authentication, tiered rate limiting, DoS protection, XSS prevention, and content security policy enforcement
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { clerkMiddleware, getAuth } from '@clerk/nextjs/server';
+import { ConvexHttpClient } from 'convex/browser';
 
 /**
- * In-memory rate limiting store for tracking request counts per IP address
- * @description Simple Map-based storage suitable for single-instance deployments.
+ * Get Convex client for database operations
+ * @description Creates environment-aware Convex HTTP client for rate limiting operations
+ * @returns {ConvexHttpClient} Configured Convex client
+ */
+function getConvexClient(): ConvexHttpClient {
+  const convexUrl = process.env.NODE_ENV === 'production'
+    ? process.env.CONVEX_DEPLOYMENT_URL_PROD || 'https://laudable-hare-856.convex.cloud'
+    : process.env.CONVEX_DEPLOYMENT_URL_DEV || 'https://youthful-albatross-854.convex.cloud';
+  
+  return new ConvexHttpClient(convexUrl);
+}
+
+/**
+ * In-memory rate limiting store for tracking request counts per IP address and user ID
+ * @description Enhanced Map-based storage for tiered rate limiting.
  * For production clusters, consider Redis or other distributed storage.
  * @type {Map<string, {count: number, resetTime: number}>}
  */
 const requestCounts = new Map<string, { count: number; resetTime: number }>();
 
 /**
- * Rate limiting configuration constants
- * @description Conservative limits to prevent DoS while allowing normal usage
+ * Tiered rate limiting configuration
+ * @description Different limits for anonymous and authenticated users
  */
-const RATE_LIMIT = 10; // requests per window
-const WINDOW_MS = 60 * 1000; // 1 minute window
+const RATE_LIMITS = {
+  anonymous: { requests: 2, window: 60 * 60 * 1000 }, // 2 per hour for anonymous
+  authenticated: { requests: 10, window: 24 * 60 * 60 * 1000 }, // 10 per day for authenticated
+  // Legacy fallback for non-zine endpoints
+  default: { requests: 10, window: 60 * 1000 } // 10 per minute
+};
+
 const CLEANUP_INTERVAL = 5 * 60 * 1000; // Clean expired entries every 5 minutes
 
 /**
@@ -49,15 +69,16 @@ function getCSPHeader(): string {
   
   const cspDirectives = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' https://vercel.live" + (isDevelopment ? " 'unsafe-eval'" : ""),
+    "script-src 'self' 'unsafe-inline' https://vercel.live https://*.clerk.accounts.dev https://clerk.*.lcl.dev" + (isDevelopment ? " 'unsafe-eval'" : ""),
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
-    "img-src 'self' data: https:",
-    "connect-src 'self' https://vercel.live",
+    "img-src 'self' data: https: https://img.clerk.com",
+    "connect-src 'self' https://vercel.live https://*.clerk.accounts.dev https://api.clerk.com https://*.convex.cloud wss://*.convex.cloud",
     "object-src 'none'",
     "base-uri 'self'",
-    "form-action 'self'",
+    "form-action 'self' https://*.clerk.accounts.dev",
     "frame-ancestors 'none'",
+    "frame-src https://*.clerk.accounts.dev",
     "upgrade-insecure-requests"
   ];
   
@@ -163,105 +184,80 @@ function getClientIP(request: NextRequest): string {
 }
 
 /**
- * Next.js middleware function for request processing and security enforcement
+ * Get rate limit key based on user authentication status
  * 
- * @param {NextRequest} request - Incoming HTTP request
- * @returns {Promise<NextResponse>} HTTP response with security headers and rate limiting
- * 
- * @description Comprehensive middleware that provides:
- * - Universal security headers applied to all routes
- * - Rate limiting specifically for API endpoints to prevent DoS
- * - IP-based request tracking with sliding window algorithm
- * - Proper HTTP status codes and headers for rate limit responses
- * - Memory management with automatic cleanup of expired entries
- * 
- * @architecture
- * Two-layer approach:
- * 1. Security headers: Applied to ALL routes for comprehensive protection
- * 2. Rate limiting: Applied only to /api/generate-zine to prevent API abuse
- * 
- * @security
- * - Rate limiting prevents DoS attacks and cost explosion (OpenAI API costs)
- * - Security headers protect against XSS, clickjacking, and content injection
- * - IP tracking enables abuse detection and blocking
- * - Standard HTTP 429 responses with retry timing information
- * 
- * @performance
- * - Efficient Map-based in-memory storage for single-instance deployments
- * - Periodic cleanup prevents memory leaks in long-running processes
- * - Early return patterns minimize processing overhead
- * - Headers provided for client-side rate limit awareness
- * 
- * @compliance
- * - HTTP 429 Too Many Requests standard compliance
- * - X-RateLimit-* headers follow RFC 6585 conventions
- * - Retry-After header provides client guidance
- * 
- * @example
- * Rate limit headers in successful response:
- * ```
- * X-RateLimit-Limit: 10
- * X-RateLimit-Remaining: 7  
- * X-RateLimit-Reset: 1640995200
- * ```
- * 
- * @example  
- * Rate limit exceeded response:
- * ```
- * Status: 429 Too Many Requests
- * X-RateLimit-Limit: 10
- * X-RateLimit-Remaining: 0
- * X-RateLimit-Reset: 1640995200  
- * Retry-After: 45
- * ```
+ * @param {NextRequest} request - Incoming request
+ * @param {string | null} userId - Clerk user ID if authenticated
+ * @returns {Object} Rate limit key and tier information
  */
-export async function middleware(request: NextRequest) {
-  const response = NextResponse.next();
+function getRateLimitInfo(request: NextRequest, userId: string | null): { key: string; tier: 'anonymous' | 'authenticated'; limits: typeof RATE_LIMITS.anonymous } {
+  if (userId) {
+    return {
+      key: `user:${userId}`,
+      tier: 'authenticated',
+      limits: RATE_LIMITS.authenticated
+    };
+  }
   
-  // Always add security headers to all routes
-  addSecurityHeaders(response);
+  const ip = getClientIP(request);
+  return {
+    key: `ip:${ip}`,
+    tier: 'anonymous',
+    limits: RATE_LIMITS.anonymous
+  };
+}
+
+/**
+ * Apply rate limiting with tiered limits based on authentication
+ * 
+ * @param {NextRequest} request - Incoming request
+ * @param {NextResponse} response - Response object
+ * @param {string | null} userId - Clerk user ID if authenticated
+ * @returns {Promise<NextResponse | null>} Error response if rate limit exceeded, null otherwise
+ */
+async function applyRateLimit(request: NextRequest, response: NextResponse, userId: string | null): Promise<NextResponse | null> {
+  const tier = userId ? 'authenticated' : 'anonymous';
+  const limits = RATE_LIMITS[tier];
   
-  // Only apply rate limiting to the API endpoint
-  if (request.nextUrl.pathname === '/api/generate-zine') {
-    const ip = getClientIP(request);
-    const now = Date.now();
+  try {
+    // Get Convex client
+    const convex = getConvexClient();
+    const clientIP = getClientIP(request);
     
-    // Periodic cleanup of expired entries
-    cleanupExpiredEntries(now);
+    // Check rate limit using Convex
+    const rateLimitCheck = await convex.query("rateLimits:checkRateLimit" as any, {
+      userId: userId || undefined,
+      ipAddress: !userId ? clientIP : undefined,
+    });
     
-    // Get current rate limit data for this IP
-    const current = requestCounts.get(ip);
+    // Set rate limit headers based on Convex response
+    response.headers.set('X-RateLimit-Limit', limits.requests.toString());
+    response.headers.set('X-RateLimit-Remaining', rateLimitCheck.remaining.toString());
+    response.headers.set('X-RateLimit-Reset', Math.ceil(rateLimitCheck.resetAt / 1000).toString());
+    response.headers.set('X-RateLimit-Tier', tier);
     
-    // If no existing data or window has expired, start new window
-    if (!current || current.resetTime < now) {
-      requestCounts.set(ip, {
-        count: 1,
-        resetTime: now + WINDOW_MS
-      });
-      
-      // Add rate limit headers for first request
-      response.headers.set('X-RateLimit-Limit', RATE_LIMIT.toString());
-      response.headers.set('X-RateLimit-Remaining', (RATE_LIMIT - 1).toString());
-      response.headers.set('X-RateLimit-Reset', Math.ceil((now + WINDOW_MS) / 1000).toString());
-      
-      return response;
-    }
-    
-    // Check if rate limit exceeded
-    if (current.count >= RATE_LIMIT) {
-      const retryAfterSeconds = Math.ceil((current.resetTime - now) / 1000);
+    // If rate limit exceeded, return error response
+    if (!rateLimitCheck.allowed) {
+      const now = Date.now();
+      const retryAfterSeconds = Math.ceil((rateLimitCheck.resetAt - now) / 1000);
+      const message = tier === 'anonymous' 
+        ? 'Rate limit exceeded. Sign in for higher limits or try again later.'
+        : 'Daily rate limit exceeded. Please try again tomorrow.';
       
       const errorResponse = NextResponse.json(
         { 
-          error: 'Too many requests. Please try again in a minute.',
-          retryAfter: retryAfterSeconds
+          error: message,
+          retryAfter: retryAfterSeconds,
+          tier,
+          upgradeAvailable: tier === 'anonymous'
         },
         {
           status: 429,
           headers: {
-            'X-RateLimit-Limit': RATE_LIMIT.toString(),
+            'X-RateLimit-Limit': limits.requests.toString(),
             'X-RateLimit-Remaining': '0',
-            'X-RateLimit-Reset': Math.ceil(current.resetTime / 1000).toString(),
+            'X-RateLimit-Reset': Math.ceil(rateLimitCheck.resetAt / 1000).toString(),
+            'X-RateLimit-Tier': tier,
             'Retry-After': retryAfterSeconds.toString(),
             'Content-Type': 'application/json',
           }
@@ -274,18 +270,128 @@ export async function middleware(request: NextRequest) {
       return errorResponse;
     }
     
-    // Increment count for this IP
+    // Record the hit in Convex database
+    await convex.mutation("rateLimits:recordRateLimitHit" as any, {
+      userId: userId || undefined,
+      ipAddress: !userId ? clientIP : undefined,
+    });
+    
+    return null;
+  } catch (error) {
+    console.error('[RateLimit] Failed to use Convex, falling back to in-memory:', error);
+    
+    // Fallback to in-memory rate limiting if Convex fails
+    const now = Date.now();
+    const { key } = getRateLimitInfo(request, userId);
+    
+    // Periodic cleanup of expired entries
+    cleanupExpiredEntries(now);
+    
+    // Get current rate limit data
+    const current = requestCounts.get(key);
+    
+    // If no existing data or window has expired, start new window
+    if (!current || current.resetTime < now) {
+      requestCounts.set(key, {
+        count: 1,
+        resetTime: now + limits.window
+      });
+      
+      // Add rate limit headers for first request
+      response.headers.set('X-RateLimit-Limit', limits.requests.toString());
+      response.headers.set('X-RateLimit-Remaining', (limits.requests - 1).toString());
+      response.headers.set('X-RateLimit-Reset', Math.ceil((now + limits.window) / 1000).toString());
+      response.headers.set('X-RateLimit-Tier', tier);
+      
+      return null;
+    }
+    
+    // Check if rate limit exceeded
+    if (current.count >= limits.requests) {
+      const retryAfterSeconds = Math.ceil((current.resetTime - now) / 1000);
+      const message = tier === 'anonymous' 
+        ? 'Rate limit exceeded. Sign in for higher limits or try again later.'
+        : 'Daily rate limit exceeded. Please try again tomorrow.';
+      
+      const errorResponse = NextResponse.json(
+        { 
+          error: message,
+          retryAfter: retryAfterSeconds,
+          tier,
+          upgradeAvailable: tier === 'anonymous'
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': limits.requests.toString(),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': Math.ceil(current.resetTime / 1000).toString(),
+            'X-RateLimit-Tier': tier,
+            'Retry-After': retryAfterSeconds.toString(),
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+      
+      // Add security headers to error response
+      addSecurityHeaders(errorResponse);
+      
+      return errorResponse;
+    }
+    
+    // Increment count
     current.count++;
     
     // Add rate limit headers for successful requests
-    const remaining = Math.max(0, RATE_LIMIT - current.count);
-    response.headers.set('X-RateLimit-Limit', RATE_LIMIT.toString());
+    const remaining = Math.max(0, limits.requests - current.count);
+    response.headers.set('X-RateLimit-Limit', limits.requests.toString());
     response.headers.set('X-RateLimit-Remaining', remaining.toString());
     response.headers.set('X-RateLimit-Reset', Math.ceil(current.resetTime / 1000).toString());
+    response.headers.set('X-RateLimit-Tier', tier);
+    
+    return null;
+  }
+}
+
+/**
+ * Enhanced middleware with Clerk authentication and tiered rate limiting
+ * 
+ * @description Comprehensive middleware that provides:
+ * - Clerk authentication integration
+ * - Tiered rate limiting (anonymous: 2/hour, authenticated: 10/day)
+ * - Universal security headers for all routes
+ * - Session migration support for anonymous to authenticated transitions
+ * - Graceful fallback to IP-based limiting if auth fails
+ */
+export default clerkMiddleware(async (auth, request: NextRequest) => {
+  const response = NextResponse.next();
+  
+  // Always add security headers to all routes
+  addSecurityHeaders(response);
+  
+  // Apply rate limiting to the zine generation endpoint
+  if (request.nextUrl.pathname === '/api/generate-zine') {
+    try {
+      // Get user authentication status from Clerk
+      const { userId } = await auth();
+      
+      // Apply tiered rate limiting
+      const rateLimitResponse = await applyRateLimit(request, response, userId);
+      if (rateLimitResponse) {
+        return rateLimitResponse;
+      }
+    } catch (error) {
+      // If auth check fails, fall back to anonymous rate limiting
+      console.warn('Auth check failed, using anonymous rate limit:', error);
+      const rateLimitResponse = await applyRateLimit(request, response, null);
+      if (rateLimitResponse) {
+        return rateLimitResponse;
+      }
+    }
   }
   
   return response;
-}
+})
 
 /**
  * Middleware configuration defining which routes should be processed
@@ -319,8 +425,11 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files) 
      * - favicon.ico (favicon file)
+     * Include API routes and authentication routes
      */
     '/((?!_next/static|_next/image|favicon.ico).*)',
-    '/api/generate-zine'
+    '/(api|trpc)(.*)',
+    '/sign-in(.*)',
+    '/sign-up(.*)'
   ]
 };
