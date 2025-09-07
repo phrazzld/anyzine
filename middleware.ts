@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { clerkMiddleware, getAuth } from '@clerk/nextjs/server';
 import { ConvexHttpClient } from 'convex/browser';
+import { ensureSessionId } from './lib/sessionMigration';
 
 /**
  * Get Convex client for database operations
@@ -224,10 +225,18 @@ async function applyRateLimit(request: NextRequest, response: NextResponse, user
     const convex = getConvexClient();
     const clientIP = getClientIP(request);
     
+    // Get or create session ID for anonymous users
+    let sessionId: string | undefined;
+    if (!userId) {
+      const sessionData = ensureSessionId(request, response);
+      sessionId = sessionData.sessionId;
+    }
+    
     // Check rate limit using Convex
     const rateLimitCheck = await convex.query("rateLimits:checkRateLimit" as any, {
       userId: userId || undefined,
       ipAddress: !userId ? clientIP : undefined,
+      sessionId: !userId ? sessionId : undefined,
     });
     
     // Set rate limit headers based on Convex response
@@ -274,6 +283,7 @@ async function applyRateLimit(request: NextRequest, response: NextResponse, user
     await convex.mutation("rateLimits:recordRateLimitHit" as any, {
       userId: userId || undefined,
       ipAddress: !userId ? clientIP : undefined,
+      sessionId: !userId ? sessionId : undefined,
     });
     
     return null;

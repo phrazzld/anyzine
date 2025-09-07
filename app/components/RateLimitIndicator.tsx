@@ -1,40 +1,63 @@
 "use client";
 
 import { useUser } from '@clerk/nextjs';
-import { useState, useEffect } from 'react';
-
-interface RateLimitInfo {
-  tier: 'anonymous' | 'authenticated';
-  remaining: number;
-  limit: number;
-  resetAt: string;
-}
+import { useQuery } from 'convex/react';
+import { getClientSessionId } from '@/lib/sessionMigration';
 
 export function RateLimitIndicator() {
   const { user } = useUser();
-  const [rateLimitInfo, setRateLimitInfo] = useState<RateLimitInfo | null>(null);
   
-  // For now, show static info based on auth status
-  // In a production app, this would fetch from an API
-  useEffect(() => {
-    const tier = user ? 'authenticated' : 'anonymous';
-    const limits = {
-      anonymous: { limit: 2, window: 'hour' },
-      authenticated: { limit: 10, window: 'day' }
-    };
-    
-    setRateLimitInfo({
-      tier,
-      limit: limits[tier].limit,
-      remaining: limits[tier].limit, // This would come from actual API
-      resetAt: limits[tier].window,
-    });
-  }, [user]);
+  // Get session ID for anonymous users
+  const sessionId = !user ? getClientSessionId() : null;
+  
+  // Fetch real rate limit data from Convex
+  const rateLimitData = useQuery("rateLimits:checkRateLimit" as any, {
+    userId: user?.id || undefined,
+    sessionId: sessionId || undefined,
+  });
+  
+  // Loading state
+  if (rateLimitData === undefined) {
+    return (
+      <div className="bg-gray-300 border-gray-500 border-4 p-4 mb-6 animate-pulse">
+        <div className="text-gray-600 font-bold uppercase text-sm">
+          Loading rate limits...
+        </div>
+      </div>
+    );
+  }
+  
+  // Error state
+  if (!rateLimitData) {
+    return (
+      <div className="bg-red-400 border-red-600 border-4 p-4 mb-6">
+        <div className="text-black font-bold uppercase text-sm">
+          Unable to load rate limit status
+        </div>
+      </div>
+    );
+  }
+  
+  // Determine tier display info
+  const tier = rateLimitData.tier as 'anonymous' | 'authenticated';
+  const limits = {
+    anonymous: { limit: 2, window: 'hour' },
+    authenticated: { limit: 10, window: 'day' }
+  };
+  
+  const rateLimitInfo = {
+    tier,
+    limit: limits[tier].limit,
+    remaining: rateLimitData.remaining,
+    resetAt: limits[tier].window,
+  };
   
   if (!rateLimitInfo) return null;
   
-  const bgColor = rateLimitInfo.tier === 'authenticated' ? 'bg-green-400' : 'bg-yellow-400';
-  const borderColor = rateLimitInfo.tier === 'authenticated' ? 'border-green-600' : 'border-yellow-600';
+  // Determine colors based on tier and remaining count
+  const isLow = rateLimitInfo.remaining <= 1;
+  const bgColor = isLow ? 'bg-orange-400' : (rateLimitInfo.tier === 'authenticated' ? 'bg-green-400' : 'bg-yellow-400');
+  const borderColor = isLow ? 'border-orange-600' : (rateLimitInfo.tier === 'authenticated' ? 'border-green-600' : 'border-yellow-600');
   
   return (
     <div className={`${bgColor} ${borderColor} border-4 p-4 mb-6`}>
@@ -46,8 +69,16 @@ export function RateLimitIndicator() {
           TIER: {rateLimitInfo.tier.toUpperCase()}
         </div>
         <div className="text-black text-xs font-mono">
-          LIMIT: {rateLimitInfo.limit} ZINES PER {rateLimitInfo.resetAt.toUpperCase()}
+          REMAINING: {rateLimitInfo.remaining} / {rateLimitInfo.limit}
         </div>
+        <div className="text-black text-xs font-mono">
+          RESETS: EVERY {rateLimitInfo.resetAt.toUpperCase()}
+        </div>
+        {isLow && (
+          <div className="mt-2 text-black text-xs font-bold">
+            ⚠️ RATE LIMIT ALMOST REACHED!
+          </div>
+        )}
         {rateLimitInfo.tier === 'anonymous' && (
           <div className="mt-2 text-black text-xs font-bold">
             💡 SIGN IN FOR 10 ZINES/DAY!

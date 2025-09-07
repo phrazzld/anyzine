@@ -1158,3 +1158,53 @@
 - **Package naming clarity**: 'convex/browser' package works in server contexts despite naming
 - **Schema function discovery**: Found existing `checkRateLimit` and `recordRateLimitHit` functions through database exploration
 - **API simplicity**: Single query/mutation calls sufficient for rate limiting integration
+
+## Real-Time Data Integration with Convex Patterns (2025-09-07)
+
+### **useQuery Hook Integration for Live Updates**
+- **Critical pattern**: `useQuery(api.rateLimits.checkRateLimit, { ip: sessionId })` provides automatic real-time updates
+- **Return value handling**: useQuery returns `undefined` during loading, not `null` - crucial for loading state detection
+- **String format requirement**: Convex queries use string format `"rateLimits:checkRateLimit"` not object references
+- **Automatic reactivity**: Data updates automatically when backend rate limit state changes without manual refetching
+
+### **Session ID Client-Side Retrieval**
+- **Anonymous user tracking**: `getClientSessionId()` function retrieves session ID for anonymous users
+- **Client-side access**: Session ID available on frontend for rate limit queries and display
+- **Consistent tracking**: Same session ID used for middleware rate limiting and client display
+- **Integration pattern**: Import from utility module and call directly in components
+
+### **Loading State Management for Real-Time Data**
+- **Undefined detection**: Check `data === undefined` to detect loading state from useQuery
+- **Loading UI pattern**: `animate-pulse` Tailwind class provides subtle loading feedback
+- **Graceful fallback**: Display placeholder values during loading to prevent layout shift
+- **Error boundaries**: Handle query errors gracefully with fallback display values
+
+### **Dynamic UI Feedback Based on Rate Limits**
+- **Color-coded warnings**: Change text/background color when rate limits approach (e.g., `≤1` remaining)
+- **Real-time count display**: Show current usage in "X / Y" format for immediate user feedback
+- **Visual hierarchy**: Use color changes (`text-orange-600`) to draw attention to low limits
+- **User experience**: Proactive warnings prevent users from hitting rate limits unexpectedly
+
+### **Static to Dynamic Data Migration Strategy**
+- **Incremental replacement**: Replace static mock data with real queries step by step
+- **Preserve UI patterns**: Maintain existing display logic and styling during data source transition
+- **Loading state integration**: Add loading states without breaking existing component structure
+- **Type safety**: Maintain TypeScript interfaces when migrating from mock to real data
+
+### **Time Estimation Accuracy - Real-Time Integration**
+- **Initial estimate**: CRITICAL complexity suggested significant implementation time
+- **Actual time**: ~15 minutes, much faster than expected
+- **Success factors**: useQuery simplicity + existing session ID patterns + clear component structure
+- **Key insight**: Convex real-time integrations are extremely fast when component structure is already established
+
+### **useQuery Pattern Discovery and Implementation**
+- **Hook import**: Import `useQuery` from "convex/react" for automatic data synchronization
+- **Query syntax**: Pass API function reference and parameters object for type safety
+- **Data reactivity**: useQuery provides live data updates without manual state management
+- **Error handling**: Built-in error handling with graceful degradation when queries fail
+
+### **Enhanced User Experience Patterns**
+- **Immediate feedback**: Real-time data updates show instant feedback on user actions
+- **Proactive warnings**: Color changes and visual cues prevent users from hitting limits
+- **Seamless integration**: Real-time updates work within existing component lifecycle
+- **Performance**: useQuery optimizes network requests and caching automatically
