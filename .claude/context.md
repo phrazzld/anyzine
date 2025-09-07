@@ -1208,3 +1208,71 @@
 - **Proactive warnings**: Color changes and visual cues prevent users from hitting limits
 - **Seamless integration**: Real-time updates work within existing component lifecycle
 - **Performance**: useQuery optimizes network requests and caching automatically
+
+## Custom Hook Creation from Component Patterns (2025-09-07)
+
+### **Pattern-Scout Reference Implementation Discovery**
+- **Success strategy**: Used pattern-scout to find existing RateLimitIndicator component providing perfect template for hook logic
+- **Template reuse**: `/app/components/RateLimitIndicator.tsx` contained exact useQuery pattern, authentication handling, and data transformations
+- **Architecture insight**: Component logic directly translatable to custom hook with minimal modifications
+- **Key insight**: Existing components often contain reusable patterns that can be extracted into hooks for broader usage
+
+### **useQuery Hook Integration Patterns**
+- **WebSocket foundation**: `useQuery("rateLimits:checkRateLimit" as any, {...})` provides automatic real-time updates via WebSocket connection
+- **Parameter handling**: `userId: user?.id || undefined, sessionId: sessionId || undefined` pattern handles both authenticated and anonymous users
+- **Return type management**: useQuery returns `undefined` (loading), `null` (error), or data object with proper TypeScript typing
+- **Type assertion**: `as any` cast required for string-format query names in current Convex integration
+
+### **Authentication-Aware Data Fetching Strategy**
+- **Clerk integration**: `useUser()` hook provides authentication state for conditional data fetching
+- **Session ID fallback**: Anonymous users tracked via `getClientSessionId()` when no authenticated user present
+- **Conditional parameters**: Pass different parameter combinations based on authentication status
+- **Tier determination**: `user ? 'authenticated' : 'anonymous'` pattern determines rate limit tier client-side
+
+### **Computed Value Architecture in Custom Hooks**
+- **Derived state pattern**: Hook calculates `percentageUsed`, `isNearLimit`, `timeUntilReset` from raw data
+- **Null safety**: All computed values handle `null`/`undefined` states gracefully with fallback values
+- **Display helpers**: Include tier-specific limits and human-readable descriptions for UI consumption
+- **Performance**: Calculations performed in hook return object, not in render cycles
+
+### **TypeScript Interface Design for Hooks**
+- **Comprehensive return interface**: `UseRateLimitReturn` documents all 17 return properties with types and descriptions
+- **Raw data access**: Include original `rateLimitData` alongside computed values for advanced usage
+- **Loading state detection**: `isLoading: rateLimitData === undefined` pattern for loading state management
+- **Error state detection**: `hasError: rateLimitData === null` pattern for error handling
+
+### **Utility Function Co-location Pattern**
+- **Export related utilities**: `formatTimeUntilReset()` function exported alongside main hook
+- **Reusable formatting**: Time formatting logic available for other components needing similar functionality
+- **Single file organization**: Related hook and utilities kept together for maintainability
+- **Consistent API**: Utility functions follow same parameter/return patterns as main hook
+
+### **JSDoc Documentation Standards for Hooks**
+- **Comprehensive hook documentation**: Full description, parameter explanations, return value documentation, usage examples
+- **Side effects declaration**: Document WebSocket connections, re-fetch triggers, authentication dependencies
+- **Usage examples**: Show typical integration patterns with conditional rendering and error handling
+- **Type safety**: JSDoc aligns with TypeScript interfaces for consistent developer experience
+
+### **Time Estimation Accuracy - Custom Hook Creation**
+- **Initial complexity**: HOOK-002 treated as medium complexity task
+- **Actual time**: ~8 minutes with pattern-based approach leveraging existing component
+- **Success factors**: Pattern-scout template discovery + existing authentication patterns + established useQuery integration
+- **Key insight**: Custom hooks are extremely fast to create when component logic already exists and can be extracted
+
+### **Real-Time Data Hook Foundation Benefits**
+- **Automatic updates**: Components using hook automatically receive live data updates without manual polling
+- **State synchronization**: Multiple components using same hook share state automatically via Convex
+- **Performance optimization**: useQuery handles caching, deduplication, and efficient network usage
+- **Developer experience**: Hook consumers get real-time data with standard React patterns (loading, error, data states)
+
+### **Component-to-Hook Extraction Patterns**
+- **Logic preservation**: Component data fetching and transformation logic directly transferable to custom hooks
+- **State management**: Component state patterns become hook return values with same semantics
+- **Authentication integration**: User authentication checks maintain same patterns in hook context
+- **Error handling**: Component error handling translates directly to hook error states
+
+### **Hook API Design Best Practices**
+- **Comprehensive interface**: Provide raw data, loading states, computed values, and utilities in single hook
+- **Optional complexity**: Simple usage possible (just `remaining`, `allowed`) with advanced features available
+- **Consistent naming**: Use established patterns (`isLoading`, `hasError`) for predictable API
+- **Backward compatibility**: Hook designed to work with existing component integration patterns

@@ -4,8 +4,19 @@
  */
 
 import { useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import { TZineSection } from "@/app/components/ZineDisplay";
 import { resilientZineGeneration, clearZineCache } from "@/app/utils/api-resilience";
+
+/**
+ * Extended zine data type with public URL and authentication info
+ */
+interface ExtendedZineData {
+  sections: TZineSection[];
+  publicId?: string;
+  publicUrl?: string;
+  zineId?: string;
+}
 
 /**
  * Hook for managing zine generation with comprehensive error handling and state management
@@ -21,10 +32,14 @@ import { resilientZineGeneration, clearZineCache } from "@/app/utils/api-resilie
  * @returns {boolean} returns.loading - True during API request, false otherwise
  * @returns {boolean} returns.formDisabled - True when form should be disabled (synchronized with loading)
  * @returns {string|null} returns.error - Error message or null if no error
- * @returns {object|null} returns.zineData - Generated zine with sections array or null
+ * @returns {object|null} returns.zineData - Generated zine with sections array, publicId, and publicUrl
  * @returns {function} returns.generateZine - Async function to generate zine from subject
  * @returns {function} returns.clearError - Clear current error state
  * @returns {function} returns.clearCache - Clear cached API responses
+ * @returns {string|null} returns.publicUrl - Public URL for sharing the generated zine
+ * @returns {string|null} returns.publicId - Public ID of the generated zine
+ * @returns {boolean} returns.isAuthenticated - Whether user is authenticated
+ * @returns {string} returns.userTier - User tier ('authenticated' or 'anonymous')
  * 
  * @example
  * ```tsx
@@ -51,8 +66,9 @@ import { resilientZineGeneration, clearZineCache } from "@/app/utils/api-resilie
  * - Validation errors handled separately from API errors
  */
 export const useZineGeneration = () => {
+  const { user } = useUser();
   const [loading, setLoading] = useState(false);
-  const [zineData, setZineData] = useState<{ sections: TZineSection[] } | null>(null);
+  const [zineData, setZineData] = useState<ExtendedZineData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   /**
@@ -82,12 +98,23 @@ export const useZineGeneration = () => {
     try {
       const data = await resilientZineGeneration(subject.trim());
       setZineData(data);
+      
+      // Add auth-aware success message to console for debugging
+      if (data?.publicUrl) {
+        const successMsg = user 
+          ? `Zine created and saved! View at: ${data.publicUrl}`
+          : `Zine created! View at: ${data.publicUrl} - Sign in to save permanently`;
+        console.log(successMsg);
+      }
     } catch (err: any) {
       console.error("Zine generation failed:", err);
       
-      // Handle different types of errors with specific messaging
+      // Handle different types of errors with auth-aware messaging
       if (err?.isRateLimit) {
-        setError(err.message);
+        const rateLimitMsg = user 
+          ? err.message 
+          : `${err.message} Sign in for higher limits!`;
+        setError(rateLimitMsg);
       } else if (err?.isTimeout) {
         setError("Request timed out. Please try again.");
       } else if (err?.isNetworkError) {
@@ -126,5 +153,10 @@ export const useZineGeneration = () => {
     generateZine,
     clearError,
     clearCache,
+    // New auth-aware fields
+    publicUrl: zineData?.publicUrl || null,
+    publicId: zineData?.publicId || null,
+    isAuthenticated: !!user,
+    userTier: user ? 'authenticated' : 'anonymous',
   };
 };

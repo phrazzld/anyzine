@@ -115,15 +115,36 @@ Updated: 2025-09-07
 ## 🟡 IMPORTANT REMAINING TASKS
 
 ### Integration & Hooks
-- [ ] **HOOK-001** - Enhance useZineGeneration hook for authentication
+- [x] **HOOK-001** - Enhance useZineGeneration hook for authentication
   - Add public URL handling
   - Show auth-aware messages
   - Files: `app/hooks/useZineGeneration.ts`
+  ```
+  Work Log:
+  - Added useUser hook from @clerk/nextjs for authentication context
+  - Created ExtendedZineData interface with publicId, publicUrl, and zineId
+  - Enhanced error messages with auth-aware context (rate limit messages differ for anon/auth users)
+  - Added success logging with conditional messages based on auth state
+  - Extended return interface with: publicUrl, publicId, isAuthenticated, userTier
+  - Build passes, TypeScript compilation successful
+  - Hook now provides complete auth awareness and public URL exposure
+  ```
 
-- [ ] **HOOK-002** - Create useRateLimit hook
+- [x] **HOOK-002** - Create useRateLimit hook
   - Fetch real rate limit status
   - Track remaining generations
   - Files: Create `app/hooks/useRateLimit.ts`
+  ```
+  Work Log:
+  - Created comprehensive useRateLimit hook with real-time Convex integration
+  - Used useQuery for automatic WebSocket updates when rate limits change
+  - Added session ID support for anonymous users via getClientSessionId()
+  - Implemented proper TypeScript interfaces for type safety
+  - Included computed values: percentageUsed, isNearLimit, timeUntilReset
+  - Added utility function formatTimeUntilReset for human-readable time display
+  - Returns both raw data and extracted values for flexible consumption
+  - Build passes, TypeScript compilation successful
+  ```
 
 ### Convex Deployment
 - [ ] **CONVEX-002** - Run Convex deployment
