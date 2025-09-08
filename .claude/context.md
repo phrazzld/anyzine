@@ -1276,3 +1276,53 @@
 - **Optional complexity**: Simple usage possible (just `remaining`, `allowed`) with advanced features available
 - **Consistent naming**: Use established patterns (`isLoading`, `hasError`) for predictable API
 - **Backward compatibility**: Hook designed to work with existing component integration patterns
+
+## Convex Deployment Process Patterns (2025-09-08)
+
+### **Non-Interactive Deployment Strategy**
+- **Required tool**: `npx convex codegen` generates missing server.js file before deployment
+- **Critical flag**: `--yes` bypasses interactive prompts for CI/CD compatibility
+- **Environment setup**: CONVEX_DEPLOYMENT environment variable specifies target deployment
+- **Success pattern**: Codegen → Deploy → Validation sequence ensures complete setup
+
+### **Server.js Generation Requirements**
+- **Missing file symptom**: Deployment fails if server.js is not present
+- **Resolution**: `npx convex codegen` creates server.js from schema and function definitions
+- **Timing**: Run codegen immediately before deployment to ensure current schema state
+- **Key insight**: Convex requires generated server files for deployment, not just source code
+
+### **Production Deployment Environment**
+- **Deployment target**: Production environment (laudable-hare-856.convex.cloud)
+- **Schema validation**: All 9 table indexes created successfully during deployment
+- **Function deployment**: Server functions deployed but require interactive setup for testing
+- **URL format**: Production deployments get https://[deployment-id].convex.cloud URLs
+
+### **Non-Interactive Limitation Patterns**
+- **Function testing restriction**: Cannot test functions via CLI without interactive npx convex dev
+- **CLI limitation**: Function invocation requires interactive terminal for auth setup
+- **Deployment success**: Schema deployment and function upload succeed without interaction
+- **Testing workaround**: Function testing must be done through application integration or web dashboard
+
+### **Deployment Command Patterns**
+- **Core command**: `npx convex deploy --yes`
+- **Environment specification**: Use CONVEX_DEPLOYMENT env var rather than command flags
+- **Pre-deployment**: Always run `npx convex codegen` first
+- **Success indicators**: "All done!" message and production URL output confirm successful deployment
+
+### **Time Estimation Accuracy - Deployment Tasks**
+- **Initial complexity**: Expected significant time for deployment setup
+- **Actual time**: ~10 minutes including troubleshooting and validation
+- **Success factors**: Clear error messages + documented commands + environment variable usage
+- **Key insight**: Deployment tasks are predictable when following established Convex patterns
+
+### **Schema and Index Deployment Success**
+- **Schema validation**: All table schemas validated during deployment process
+- **Index creation**: 9 table indexes created automatically from schema definitions
+- **Data integrity**: Existing data preserved during schema updates
+- **Migration handling**: Convex handles schema migrations transparently
+
+### **Environment Variable Configuration**
+- **Required variable**: CONVEX_DEPLOYMENT must specify target deployment environment
+- **Value format**: Deployment ID format (e.g., "laudable-hare-856")
+- **Scope**: Environment variable used by all Convex CLI commands for targeting
+- **Configuration**: Set in CI/CD environment or local .env files for consistent targeting
