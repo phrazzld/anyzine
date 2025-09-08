@@ -253,7 +253,8 @@ describe('SubjectForm', () => {
       await user.click(createButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Too many requests. Please wait 30 seconds before trying again.')).toBeInTheDocument();
+        // The hook appends " Sign in for higher limits!" for unauthenticated users
+        expect(screen.getByText('Too many requests. Please wait 30 seconds before trying again. Sign in for higher limits!')).toBeInTheDocument();
       });
     });
 

@@ -170,13 +170,37 @@ Updated: 2025-09-07
 ## 🧪 TESTING (Currently Missing)
 
 ### Critical Tests Needed
-- [ ] **TEST-001** - Test Convex functions
+- [x] **TEST-001** - Test Convex functions
   - No tests exist for `convex/zines.ts` or `convex/rateLimits.ts`
   - Files: Create `convex/zines.test.ts`, `convex/rateLimits.test.ts`
+  ```
+  Work Log:
+  - Created comprehensive tests for rateLimits.ts (13 tests)
+  - Created comprehensive tests for zines.ts (18 tests)
+  - Mocked Convex context and database operations
+  - Tested all exported functions including edge cases
+  - All 31 tests passing successfully
+  - Coverage includes: rate limiting, session migration, zine CRUD operations
+  - Used Vitest with proper mocking patterns for Convex functions
+  ```
 
-- [ ] **TEST-002** - Test authentication flow
+- [x] **TEST-002** - Test authentication flow
   - No tests for Clerk integration
-  - Files: Create `tests/integration/auth.test.ts`
+  - Files: Create `tests/integration/auth.test.tsx`
+  ```
+  Work Log:
+  - Fixed global test setup to mock Clerk authentication (useUser, useAuth, SignedIn, SignedOut)
+  - Added Convex mocks (useQuery, useMutation) to prevent provider errors
+  - Created comprehensive auth integration tests covering:
+    * Authentication state management (sign-in/sign-out UI)
+    * Rate limiting with different messages for auth/anon users
+    * Authentication context in hooks (useZineGeneration)
+    * Session migration scenarios
+    * Authentication UI components
+    * Error handling and loading states
+  - Fixed existing SubjectForm tests that were failing due to missing Clerk mocks
+  - All 221 existing tests + 11 new auth tests passing (232 total)
+  ```
 
 - [ ] **TEST-003** - Test rate limiting
   - No tests for tiered limits or fallback

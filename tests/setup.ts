@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
 import { afterEach, beforeAll, afterAll } from 'vitest';
+import React from 'react';
 
 // Mock Next.js router
 import { vi } from 'vitest';
@@ -24,6 +25,43 @@ vi.mock('openai', () => ({
       },
     },
   })),
+}));
+
+// Mock Clerk authentication
+vi.mock('@clerk/nextjs', () => ({
+  useUser: vi.fn(() => ({
+    user: null, // Default to unauthenticated
+    isLoaded: true,
+    isSignedIn: false,
+  })),
+  useAuth: vi.fn(() => ({
+    isLoaded: true,
+    isSignedIn: false,
+    userId: null,
+    sessionId: null,
+    orgId: null,
+    orgRole: null,
+    orgSlug: null,
+  })),
+  useClerk: vi.fn(() => ({
+    session: null,
+    user: null,
+  })),
+  ClerkProvider: ({ children }: { children: React.ReactNode }) => children,
+  SignInButton: ({ children }: { children: React.ReactNode }) => React.createElement('div', { 'data-testid': 'sign-in-button' }, children),
+  SignOutButton: ({ children }: { children: React.ReactNode }) => React.createElement('div', { 'data-testid': 'sign-out-button' }, children),
+  UserButton: () => React.createElement('div', { 'data-testid': 'user-button' }),
+  SignedIn: ({ children }: { children: React.ReactNode }) => React.createElement('div', { 'data-testid': 'signed-in' }, children),
+  SignedOut: ({ children }: { children: React.ReactNode }) => React.createElement('div', { 'data-testid': 'signed-out' }, children),
+}));
+
+// Mock Convex
+vi.mock('convex/react', () => ({
+  useQuery: vi.fn(() => null), // Default to no data
+  useMutation: vi.fn(() => vi.fn()),
+  useAction: vi.fn(() => vi.fn()),
+  ConvexProvider: ({ children }: { children: React.ReactNode }) => children,
+  ConvexReactClient: vi.fn(),
 }));
 
 // Clean up after each test
