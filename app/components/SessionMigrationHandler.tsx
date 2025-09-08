@@ -11,7 +11,7 @@ import { getClientSessionId } from "@/lib/sessionMigration";
  */
 export function SessionMigrationHandler() {
   const { user } = useUser();
-  const migrateSession = useMutation("rateLimits:migrateSession" as any);
+  const migrateSession = useMutation("rateLimits.migrateSession" as any);
   const hasAttemptedMigration = useRef(false);
   
   useEffect(() => {

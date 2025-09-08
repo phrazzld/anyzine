@@ -26,7 +26,7 @@ export default async function PublicZinePage({ params }: PageProps) {
   // Fetch zine from Convex
   let zine;
   try {
-    zine = await convex.query("zines:getZineByPublicId" as any, {
+    zine = await convex.query("zines.getZineByPublicId" as any, {
       publicId: id,
     });
   } catch (error) {

@@ -11,7 +11,7 @@ export function RateLimitIndicator() {
   const sessionId = !user ? getClientSessionId() : null;
   
   // Fetch real rate limit data from Convex
-  const rateLimitData = useQuery("rateLimits:checkRateLimit" as any, {
+  const rateLimitData = useQuery("rateLimits.checkRateLimit" as any, {
     userId: user?.id || undefined,
     sessionId: sessionId || undefined,
   });

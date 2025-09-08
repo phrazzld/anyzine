@@ -272,7 +272,7 @@ describe('Zine Functions', () => {
         .take(args.limit);
 
       expect(result).toEqual(mockUserZines);
-      expect(result.every(z => z.generatedBy === 'user123')).toBe(true);
+      expect(result.every((z: any) => z.generatedBy === 'user123')).toBe(true);
     });
 
     it('should return empty array for user with no zines', async () => {
@@ -440,7 +440,7 @@ describe('Zine Functions', () => {
       mockCtx.db.query().withIndex().filter().first.mockResolvedValue(mockZine);
 
       // Simulate initialization logic
-      const shareCount = mockZine.shareCount || 0;
+      const shareCount = (mockZine as any).shareCount || 0;
       const updatedCount = shareCount + 1;
 
       await mockCtx.db.patch(mockZine._id, {

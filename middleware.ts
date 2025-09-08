@@ -233,7 +233,7 @@ async function applyRateLimit(request: NextRequest, response: NextResponse, user
     }
     
     // Check rate limit using Convex
-    const rateLimitCheck = await convex.query("rateLimits:checkRateLimit" as any, {
+    const rateLimitCheck = await convex.query("rateLimits.checkRateLimit" as any, {
       userId: userId || undefined,
       ipAddress: !userId ? clientIP : undefined,
       sessionId: !userId ? sessionId : undefined,
@@ -280,7 +280,7 @@ async function applyRateLimit(request: NextRequest, response: NextResponse, user
     }
     
     // Record the hit in Convex database
-    await convex.mutation("rateLimits:recordRateLimitHit" as any, {
+    await convex.mutation("rateLimits.recordRateLimitHit" as any, {
       userId: userId || undefined,
       ipAddress: !userId ? clientIP : undefined,
       sessionId: !userId ? sessionId : undefined,
