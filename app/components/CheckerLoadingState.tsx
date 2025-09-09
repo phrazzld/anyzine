@@ -5,191 +5,115 @@
  * with retro styling. Designed for the AnyZine application's neobrutalist aesthetic.
  * 
  * Features:
- * - Full viewport coverage with 240 cells (12x20 mobile, 20x12 desktop)
- * - Staggered animation timing for wave-like visual effect
- * - Dynamic color system using CSS custom properties
+ * - CSS-only animations (no hydration issues)
+ * - Full viewport coverage with responsive grid
+ * - Deterministic pattern based on cell index
  * - GPU-optimized animations (60fps performance)
  * - Smooth error state transitions
  * - Retro text overlay with neobrutalist typography
- * - Accessibility: Automatic fallback to simple spinner for reduced motion preference
- * - Fixed positioning overlay that covers entire screen during loading
- * 
- * Performance:
- * - Uses only GPU-accelerated CSS properties (opacity, transform)
- * - will-change declarations for optimal rendering
- * - ~14.4kB bundle impact (no increase from baseline)
- * - Scales efficiently across device types
- * 
- * @example
- * ```tsx
- * // Basic usage
- * <CheckerLoadingState isVisible={loading} />
- * 
- * // With custom colors and message
- * <CheckerLoadingState 
- *   isVisible={loading}
- *   hasError={!!error}
- *   colors={['#c026d3', '#fef08a', '#bef264']}
- *   message="CRAFTING YOUR DIGITAL ZINE..."
- * />
- * 
- * // Error state handling
- * <CheckerLoadingState 
- *   isVisible={loading}
- *   hasError={error !== null}
- *   message="GENERATING CONTENT..."
- * />
- * ```
  */
 
-import React, { useState, useEffect } from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import LoadingSpinner from './LoadingSpinner';
 
-/**
- * Default fallback colors for the checker pattern
- * These are the same values used in CSS custom properties
- */
-const DEFAULT_CHECKER_COLORS = [
-  '#c026d3', // fuchsia-400
-  '#fef08a', // yellow-200  
-  '#bef264'  // lime-300
-];
-
-/**
- * Validates and sanitizes color array, providing safe fallbacks
- * @param colors Array of color values to validate
- * @returns Validated array with fallbacks applied
- */
-function validateCheckerColors(colors: string[]): string[] {
-  if (!Array.isArray(colors) || colors.length === 0) {
-    return DEFAULT_CHECKER_COLORS;
-  }
-  
-  // Filter out invalid/empty colors and provide fallbacks
-  const validColors = colors.filter(color => 
-    typeof color === 'string' && color.trim().length > 0
-  );
-  
-  // If no valid colors remain, use defaults
-  if (validColors.length === 0) {
-    return DEFAULT_CHECKER_COLORS;
-  }
-  
-  return validColors;
+interface CheckerLoadingStateProps {
+  /** Status message displayed over the checker pattern */
+  message?: string;
+  /** Subject of the zine being generated */
+  subject?: string;
+  /** Controls component visibility */
+  isVisible?: boolean;
+  /** Triggers error state transition */
+  hasError?: boolean;
 }
 
 /**
- * Props interface for CheckerLoadingState component
- * 
- * @interface CheckerLoadingStateProps
+ * Empty state grid component - shows when no content is loading
+ * Uses deterministic pattern to avoid hydration issues
  */
-interface CheckerLoadingStateProps {
-  /** 
-   * Array of CSS color values for checker cells. Defaults to CSS custom properties
-   * that automatically adapt to theme changes: --checker-color-1, --checker-color-2, --checker-color-3
-   * @default ['var(--checker-color-1, #c026d3)', 'var(--checker-color-2, #fef08a)', 'var(--checker-color-3, #bef264)']
-   */
-  colors?: string[];
-  /** 
-   * Status message displayed over the checker pattern in retro styling
-   * @default 'CRAFTING YOUR DIGITAL ZINE...'
-   */
-  message?: string;
-  /** 
-   * Subject of the zine being generated, used to create dynamic messages
-   */
-  subject?: string;
-  /** 
-   * Controls component visibility. When false, component is hidden via CSS classes
-   * @default true
-   */
-  isVisible?: boolean;
-  /** 
-   * Triggers error state transition. When true, checker cells fade out in 150ms
-   * @default false
-   */
-  hasError?: boolean;
+export function EmptyStateGrid() {
+  const cellCount = 64; // 8x8 grid
+  const colors = [
+    'var(--checker-color-1, #c026d3)', // fuchsia
+    'var(--checker-color-2, #fef08a)', // yellow
+    'var(--checker-color-3, #bef264)'  // lime
+  ];
+  
+  const cells = Array.from({ length: cellCount }, (_, index) => {
+    // Deterministic color selection based on index
+    const colorIndex = index % 3;
+    const backgroundColor = colors[colorIndex];
+    
+    // Deterministic delay based on position for wave effect
+    const row = Math.floor(index / 8);
+    const col = index % 8;
+    const delay = (row + col) * 0.1;
+    
+    // Deterministic animation duration variation
+    const duration = 1 + (index % 3) * 0.5;
+    
+    // Some cells pulse, others don't (deterministic based on index)
+    const shouldPulse = index % 5 < 3;
+    
+    return (
+      <div
+        key={index}
+        className={`aspect-square ${shouldPulse ? 'empty-pulse' : ''}`}
+        style={{
+          backgroundColor,
+          opacity: 0.08,
+          '--pulse-delay': `${delay}s`,
+          '--pulse-duration': `${duration}s`,
+          '--pop-delay': index % 7 === 0 ? `${delay * 2}s` : 'none'
+        } as React.CSSProperties}
+      />
+    );
+  });
+  
+  return (
+    <div className="absolute inset-0 grid grid-cols-8 gap-0 opacity-30">
+      {cells}
+    </div>
+  );
 }
 
 /**
  * Neobrutalist checker-pattern loading state component
  * 
- * @description Renders a responsive animated checker grid with retro tech aesthetics:
- * - Uses existing neobrutalist color palette (fuchsia-400, yellow-200, lime-300)
- * - Implements responsive CSS Grid layout (6x6 mobile, 8x8 desktop)
- * - Provides foundation for CSS keyframe animations
- * - Smooth error state transitions with 150ms fade-out
- * - Maintains consistency with existing loading state positioning
- * 
- * @param {CheckerLoadingStateProps} props Component configuration
- * @returns {JSX.Element} Checker pattern loading state
- * 
- * @example
- * ```tsx
- * <CheckerLoadingState 
- *   message="CRAFTING YOUR DIGITAL ZINE..."
- *   isVisible={loading}
- * />
- * // Colors automatically sourced from CSS custom properties
- * // --checker-color-1, --checker-color-2, --checker-color-3
- * ```
+ * Uses CSS-only animations to avoid hydration issues
+ * Provides smooth, performant loading experience
  */
 export default function CheckerLoadingState({ 
-  colors = ['var(--checker-color-1, #c026d3)', 'var(--checker-color-2, #fef08a)', 'var(--checker-color-3, #bef264)'],
   message,
   subject = '',
   isVisible = true,
   hasError = false
 }: CheckerLoadingStateProps) {
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   
-  // Validate and sanitize colors with fallback protection
-  const safeColors = validateCheckerColors(colors);
-  
-  // Generate dynamic message based on subject
+  // Generate display message
   const displayMessage = message || (
     subject.trim() 
       ? `CRAFTING YOUR DIGITAL ZINE ABOUT ${subject.toUpperCase()}...`
       : 'CRAFTING YOUR DIGITAL ZINE...'
   );
   
-  // Handler to change cell color on each animation iteration
-  const handleAnimationIteration = (e: React.AnimationEvent<HTMLDivElement>) => {
-    const newColorIndex = Math.floor(Math.random() * safeColors.length);
-    e.currentTarget.style.backgroundColor = safeColors[newColorIndex];
-  };
-  
   // Detect user's motion preferences
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-      setPrefersReducedMotion(mediaQuery.matches);
-      
-      const handleChange = (e: MediaQueryListEvent) => {
-        setPrefersReducedMotion(e.matches);
-      };
-      
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
-    }
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mediaQuery.matches);
+    
+    const handleChange = (e: MediaQueryListEvent) => {
+      setPrefersReducedMotion(e.matches);
+    };
+    
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
   
-  // Handle transition to error state
-  useEffect(() => {
-    if (hasError && isVisible) {
-      setIsTransitioning(true);
-      // Start fade-out transition (duration matches pattern: 150ms)
-      const timer = setTimeout(() => {
-        setIsTransitioning(false);
-      }, 150);
-      return () => clearTimeout(timer);
-    } else if (!hasError) {
-      setIsTransitioning(false);
-    }
-  }, [hasError, isVisible]);
-  
-  if (!isVisible && !isTransitioning) return null;
+  if (!isVisible) return null;
 
   // Fallback to simple spinner for users who prefer reduced motion
   if (prefersReducedMotion) {
@@ -205,60 +129,31 @@ export default function CheckerLoadingState({
     );
   }
 
-  // Calculate cells needed for full viewport coverage
-  // Desktop: ~20 columns x 12 rows = 240 cells
-  // Mobile: ~12 columns x 20 rows = 240 cells  
-  const cellCount = 240;
+  // Simple deterministic grid pattern
+  const cellCount = 240; // 12x20 mobile, 20x12 desktop
   const checkerCells = Array.from({ length: cellCount }, (_, index) => {
-    // Generate random properties for each cell
-    const colorIndex = Math.floor(Math.random() * safeColors.length);
-    const backgroundColor = safeColors[colorIndex];
+    // Deterministic pattern based on index
+    const colorClass = index % 3 === 0 ? 'checker-1' : 
+                      index % 3 === 1 ? 'checker-2' : 'checker-3';
     
-    // Random animation delay (0-3s) and duration variation
-    const animationDelay = Math.random() * 3;
-    const animationDuration = 1.5 + Math.random() * 1; // 1.5-2.5s
-    
-    // Random initial opacity for more organic feel
-    const initialOpacity = 0.2 + Math.random() * 0.3; // 0.2-0.5
-    
-    // Random animation type (some cells get different animations)
-    const animationType = Math.random();
-    let animationClass = 'checker-cell';
-    if (animationType < 0.6) {
-      animationClass = 'checker-cell'; // Default fade
-    } else if (animationType < 0.8) {
-      animationClass = 'checker-pulse'; // Gentle pulse
-    } else {
-      animationClass = 'checker-shimmer'; // Brightness variation
-    }
-    
-    // Some cells stay static for more organic pattern
-    if (Math.random() < 0.15) {
-      animationClass = 'checker-static';
-    }
+    // Create wave effect with CSS animation delay
+    const row = Math.floor(index / 20);
+    const col = index % 20;
+    const animationDelay = `${(row + col) * 0.05}s`;
     
     return (
       <div
         key={index}
-        className={`
-          aspect-square
-          border border-black
-          ${animationClass}
-        `}
+        className={`aspect-square checker-cell ${colorClass} ${hasError ? 'checker-fade-out' : ''}`}
         style={{
-          '--cell-index': index,
-          '--animation-delay': `${animationDelay}s`,
-          '--animation-duration': `${animationDuration}s`,
-          '--initial-opacity': initialOpacity,
-          backgroundColor: backgroundColor,
-        } as React.CSSProperties}
-        onAnimationIteration={animationClass !== 'checker-static' ? handleAnimationIteration : undefined}
+          animationDelay
+        }}
       />
     );
   });
 
   return (
-    <div className={`fixed inset-0 z-50 bg-white ${hasError ? 'checker-fade-out' : ''}`}>
+    <div className="fixed inset-0 z-50 bg-white">
       {/* Full viewport checker grid */}
       <div className="grid grid-cols-12 md:grid-cols-20 gap-0 w-full h-full">
         {checkerCells}

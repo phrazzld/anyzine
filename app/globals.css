@@ -183,4 +183,28 @@ body {
       transform: scale(0.95);
     }
   }
+
+  /* Deterministic checker colors */
+  .checker-1 {
+    background-color: var(--checker-color-1, #c026d3);
+  }
+  
+  .checker-2 {
+    background-color: var(--checker-color-2, #fef08a);
+  }
+  
+  .checker-3 {
+    background-color: var(--checker-color-3, #bef264);
+  }
+
+  /* Simple checker animation */
+  @keyframes checkerWave {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.9; }
+  }
+  
+  .checker-cell {
+    animation: checkerWave 2s ease-in-out infinite;
+    will-change: opacity;
+  }
 }

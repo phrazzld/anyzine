@@ -2,6 +2,7 @@
 
 import { useUser } from "@clerk/nextjs";
 import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { useEffect, useRef } from "react";
 import { getClientSessionId } from "@/lib/sessionMigration";
 
@@ -11,7 +12,7 @@ import { getClientSessionId } from "@/lib/sessionMigration";
  */
 export function SessionMigrationHandler() {
   const { user } = useUser();
-  const migrateSession = useMutation("rateLimits.migrateSession" as any);
+  const migrateSession = useMutation(api.rateLimits.migrateSession);
   const hasAttemptedMigration = useRef(false);
   
   useEffect(() => {

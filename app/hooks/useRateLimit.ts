@@ -7,6 +7,7 @@
 
 import { useUser } from '@clerk/nextjs';
 import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 import { getClientSessionId } from '@/lib/sessionMigration';
 
 /**
@@ -83,7 +84,7 @@ export const useRateLimit = (): UseRateLimitReturn => {
   const sessionId = !user ? getClientSessionId() : null;
   
   // Fetch rate limit data from Convex with real-time updates
-  const rateLimitData = useQuery("rateLimits.checkRateLimit" as any, {
+  const rateLimitData = useQuery(api.rateLimits.checkRateLimit, {
     userId: user?.id || undefined,
     sessionId: sessionId || undefined,
   }) as RateLimitData | undefined | null;

@@ -2,37 +2,45 @@
 
 import { useUser } from '@clerk/nextjs';
 import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 import { getClientSessionId } from '@/lib/sessionMigration';
+import { useEffect, useState } from 'react';
 
 export function RateLimitIndicator() {
   const { user } = useUser();
+  const [hasTimedOut, setHasTimedOut] = useState(false);
   
   // Get session ID for anonymous users
   const sessionId = !user ? getClientSessionId() : null;
   
-  // Fetch real rate limit data from Convex
-  const rateLimitData = useQuery("rateLimits.checkRateLimit" as any, {
+  // Fetch real rate limit data from Convex with proper typed API
+  const rateLimitData = useQuery(api.rateLimits.checkRateLimit, {
     userId: user?.id || undefined,
     sessionId: sessionId || undefined,
   });
   
-  // Loading state
+  // Implement timeout for graceful degradation (3 seconds)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (rateLimitData === undefined) {
+        setHasTimedOut(true);
+      }
+    }, 3000);
+    
+    return () => clearTimeout(timer);
+  }, [rateLimitData]);
+  
+  // If we've timed out or there's an error, hide the indicator (graceful degradation)
+  if (hasTimedOut || rateLimitData === null) {
+    return null; // Don't block the UI - let users use the app
+  }
+  
+  // Loading state - show briefly
   if (rateLimitData === undefined) {
     return (
       <div className="bg-gray-300 border-gray-500 border-4 p-4 mb-6 animate-pulse">
         <div className="text-gray-600 font-bold uppercase text-sm">
           Loading rate limits...
-        </div>
-      </div>
-    );
-  }
-  
-  // Error state
-  if (!rateLimitData) {
-    return (
-      <div className="bg-red-400 border-red-600 border-4 p-4 mb-6">
-        <div className="text-black font-bold uppercase text-sm">
-          Unable to load rate limit status
         </div>
       </div>
     );

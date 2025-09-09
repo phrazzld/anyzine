@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { ConvexHttpClient } from 'convex/browser';
+import { api } from '@/convex/_generated/api';
 import { ZineDisplay, TZineSection } from '@/app/components/ZineDisplay';
 import Link from 'next/link';
 import { ShareButtons } from './ShareButtons';
@@ -26,7 +27,7 @@ export default async function PublicZinePage({ params }: PageProps) {
   // Fetch zine from Convex
   let zine;
   try {
-    zine = await convex.query("zines.getZineByPublicId" as any, {
+    zine = await convex.query(api.zines.getZineByPublicId, {
       publicId: id,
     });
   } catch (error) {
