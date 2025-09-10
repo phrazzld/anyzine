@@ -10,14 +10,14 @@ import { ZineDisplay } from "./ZineDisplay";
 import CheckerLoadingState from "./CheckerLoadingState";
 import EmptyStateGrid from "./EmptyStateGrid";
 import SubjectCarousel from "./SubjectCarousel";
-import { RateLimitIndicator } from "./RateLimitIndicator";
 import { useZineGeneration } from "@/app/hooks/useZineGeneration";
 import { useSubjectValidation } from "@/app/hooks/useSubjectValidation";
 import { useSubjectForm } from "@/app/hooks/useSubjectForm";
+import { AuthButton } from './AuthButton';
 
 /**
  * Primary form component for zine subject input and generation workflow
- * 
+ *
  * @description Complete user interface for zine generation with comprehensive state management:
  * - Subject input form with real-time validation feedback
  * - Random subject suggestion functionality
@@ -26,9 +26,9 @@ import { useSubjectForm } from "@/app/hooks/useSubjectForm";
  * - Success state with zine content display
  * - Neobrutalist styling with hover/active animations
  * - Integration of multiple custom hooks for separation of concerns
- * 
+ *
  * @returns {JSX.Element} Complete form interface with conditional content display
- * 
+ *
  * @example
  * ```tsx
  * // Used as the main interface component in the home page
@@ -40,21 +40,21 @@ import { useSubjectForm } from "@/app/hooks/useSubjectForm";
  *   );
  * }
  * ```
- * 
+ *
  * @architecture
  * - Form state managed by useSubjectForm hook
  * - Validation handled by useSubjectValidation hook
  * - API calls and response state managed by useZineGeneration hook
  * - ZineDisplay component renders successful results
  * - Error boundaries and loading states prevent UI corruption
- * 
+ *
  * @security
  * - Real-time client-side validation with security pattern detection
  * - Server-side validation integration prevents prompt injection
  * - Input length limits (maxLength={250}) prevent buffer overflow
  * - Error sanitization prevents information disclosure
  * - Rate limiting feedback for DoS protection
- * 
+ *
  * @performance
  * - Debounced validation prevents excessive API calls
  * - Transform-GPU animations for smooth interactions
@@ -64,13 +64,21 @@ import { useSubjectForm } from "@/app/hooks/useSubjectForm";
 export default function SubjectForm() {
   const { loading, error, zineData, generateZine, clearError } = useZineGeneration();
   const { validateSubject } = useSubjectValidation();
-  const { subject, setSubject, handleInputChange, handleRandom } = useSubjectForm();
+  const { subject, setSubject, handleInputChange } = useSubjectForm();
+
+  // Shared button styling for consistency
+  const buttonBaseClass = `
+    px-6 py-3 font-bold uppercase
+    transition-all transform-gpu duration-150
+    hover:-translate-y-0.5 active:translate-y-0
+    disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0
+  `;
 
   /**
    * Handle form submission and initiate zine generation
-   * 
+   *
    * @param {React.FormEvent} e - Form submission event
-   * 
+   *
    * @description Coordinates form submission with validation and API generation:
    * - Prevents default browser form submission behavior
    * - Performs client-side validation before API call
@@ -79,16 +87,16 @@ export default function SubjectForm() {
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const validationError = validateSubject(subject);
     await generateZine(subject, validationError);
   };
 
   /**
    * Enhanced input change handler with real-time validation feedback
-   * 
+   *
    * @param {React.ChangeEvent<HTMLInputElement>} e - Input change event
-   * 
+   *
    * @description Provides improved UX with immediate validation feedback:
    * - Updates form state through base input change handler
    * - Performs real-time validation on new input value
@@ -97,7 +105,7 @@ export default function SubjectForm() {
    */
   const handleInputChangeWithValidation = (e: React.ChangeEvent<HTMLInputElement>) => {
     handleInputChange(e);
-    
+
     // Clear error if input becomes valid
     const validationError = validateSubject(e.target.value);
     if (error && !validationError) {
@@ -105,25 +113,12 @@ export default function SubjectForm() {
     }
   };
 
-  /**
-   * Enhanced random subject handler with error state management
-   * 
-   * @description Combines random subject selection with error clearing:
-   * - Delegates to base random subject selection functionality
-   * - Automatically clears any existing error states
-   * - Provides clean slate for new random subject experimentation
-   * - Improves user experience by preventing stale error display
-   */
-  const handleRandomWithClear = () => {
-    handleRandom();
-    clearError();
-  };
 
   /**
    * Handle subject selection from the carousel
-   * 
+   *
    * @param {string} selectedSubject - Subject selected from rotating carousel
-   * 
+   *
    * @description Sets the input field with carousel selection:
    * - Populates input with selected subject
    * - Clears any existing errors
@@ -136,52 +131,48 @@ export default function SubjectForm() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Rate limit indicator - always visible */}
-      <div className="max-w-md mx-auto mt-4">
-        <RateLimitIndicator />
-      </div>
-      
-      {/* Form section - visible when not in empty state */}
-      {(loading || error || zineData) && (
-        <section className="border-2 border-black">
-          <form className="flex gap-2 items-center p-2" onSubmit={handleSubmit}>
+      {/* Unified top bar with logo, form, and auth */}
+      <header className="bg-white border-b-4 border-black">
+        <div className="flex items-stretch">
+          {/* Logo */}
+          <div className="flex items-center px-4 border-r-2 border-black">
+            <h1 className="text-2xl md:text-3xl font-black uppercase tracking-tight">
+              ANY<span className="text-purple-600">ZINE</span>
+            </h1>
+          </div>
+
+          {/* Input Form */}
+          <form className="flex-1 flex" onSubmit={handleSubmit}>
             <input
               type="text"
-              className="border-2 border-black p-2 text-xl w-full"
-              placeholder="enter a subject (max 200 chars)"
+              className="flex-1 px-4 py-3 text-xl md:text-2xl"
+              placeholder="enter a subject"
               value={subject}
               onChange={handleInputChangeWithValidation}
               maxLength={200}
+              disabled={loading}
             />
+          </form>
+
+          {/* Actions Container - All buttons as siblings */}
+          <div className="flex items-stretch">
             <button
               type="button"
-              onClick={handleRandomWithClear}
-              className="
-                border-2 border-black bg-gray-200 text-black px-4 py-2 uppercase font-bold
-                transition-transform transform-gpu duration-150
-                hover:-translate-y-1
-                active:translate-y-1
-              "
+              onClick={handleSubmit}
+              disabled={loading}
+              className={`${buttonBaseClass} border-l-2 border-black bg-violet-600 text-white hover:bg-violet-700`}
             >
-              random
+              {loading ? 'creating...' : 'create'}
             </button>
-            <button
-              type="submit"
-              className="
-                border-2 border-black bg-violet-600 text-white px-4 py-2 uppercase font-bold
-                transition-transform transform-gpu duration-150
-                hover:-translate-y-1
-                active:translate-y-1
-              "
-            >
-              create
-            </button>
-          </form>
-        </section>
-      )}
+            <div className="border-l-2 border-black">
+              <AuthButton />
+            </div>
+          </div>
+        </div>
+      </header>
 
       {/* loading */}
-      <CheckerLoadingState 
+      <CheckerLoadingState
         isVisible={loading}
         hasError={!!error}
         subject={subject}
@@ -192,35 +183,12 @@ export default function SubjectForm() {
         <div className="flex-1 relative overflow-hidden">
           {/* Full viewport background grid */}
           <EmptyStateGrid />
-          
-          {/* Floating form bar at top */}
-          <div className="absolute top-0 left-0 right-0 z-20 bg-white/95 backdrop-blur-sm border-b-2 border-black shadow-[0_2px_0_0_rgba(0,0,0,1)]">
-            <form className="flex gap-0 items-stretch" onSubmit={handleSubmit}>
-              <input
-                type="text"
-                className="border-y-2 border-l-2 border-black p-3 text-2xl w-full"
-                placeholder="enter a subject (max 200 chars)"
-                value={subject}
-                onChange={handleInputChangeWithValidation}
-                maxLength={200}
-              />
-              <button
-                type="submit"
-                className="
-                  border-y-2 border-r-2 border-black bg-violet-600 text-white px-6 py-3 uppercase font-bold
-                  transition-transform transform-gpu duration-150
-                  hover:-translate-y-1
-                  active:translate-y-1
-                "
-              >
-                create
-              </button>
-            </form>
-          </div>
-          
-          {/* Centered carousel with top padding for form */}
-          <div className="relative z-10 flex items-center justify-center h-full pt-36">
-            <SubjectCarousel onSubjectSelect={handleSubjectSelect} />
+
+          {/* Centered carousel */}
+          <div className="relative z-10 flex items-center justify-center h-full">
+            <div className="pt-24">
+              <SubjectCarousel onSubjectSelect={handleSubjectSelect} />
+            </div>
           </div>
         </div>
       )}
@@ -228,8 +196,10 @@ export default function SubjectForm() {
       {/* error state */}
       {error && !loading && (
         <div className="flex-1 p-6">
-          <div className="p-6 border-2 border-red-500 bg-red-100 text-red-800 text-center text-sm rounded">
-            {error}
+          <div className="p-6 border-4 border-black bg-red-100">
+            <div className="text-red-800 text-center font-bold uppercase">
+              {error}
+            </div>
           </div>
         </div>
       )}
