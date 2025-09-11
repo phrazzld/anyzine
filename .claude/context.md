@@ -1326,3 +1326,59 @@
 - **Value format**: Deployment ID format (e.g., "laudable-hare-856")
 - **Scope**: Environment variable used by all Convex CLI commands for targeting
 - **Configuration**: Set in CI/CD environment or local .env files for consistent targeting
+
+## Environment Variable Standardization Patterns (2025-09-10)
+
+### **Systematic Pattern-Scout Discovery Strategy**
+- **Comprehensive analysis**: Used pattern-scout to identify ALL environment variable usage patterns across codebase before making changes
+- **Success strategy**: Discovered correct implementation already existed in middleware.ts (CONVEX_DEPLOYMENT_URL_*) providing standardization template
+- **Critical finding**: Server-side code incorrectly using NEXT_PUBLIC_ prefixed variables, exposing them to client bundle
+- **Pattern recognition**: Middleware had the correct approach that other files should follow
+
+### **Server-Side vs Client-Side Environment Variable Separation**
+- **Security issue discovered**: API routes and SSR pages using NEXT_PUBLIC_ variables unnecessarily
+- **Correct pattern**: Server-side code should use `CONVEX_DEPLOYMENT_URL_*`, client-side uses `NEXT_PUBLIC_CONVEX_URL_*`
+- **Bundle exposure risk**: NEXT_PUBLIC_ variables are included in client JavaScript bundle
+- **Isolation principle**: Keep server environment variables separate from client-exposed variables
+
+### **Fail-Fast Configuration Management**
+- **Critical improvement**: Removed ALL hardcoded fallback URLs to ensure proper configuration validation
+- **Silent failure prevention**: Hardcoded fallbacks masked environment variable misconfiguration
+- **Explicit error throwing**: Added error throwing when required environment variables are missing
+- **Production safety**: Prevents accidentally connecting to wrong database due to missing config
+
+### **Environment Variable Naming Consistency**
+- **Standardization approach**: Use single consistent naming pattern throughout codebase
+- **Server-side standard**: `CONVEX_DEPLOYMENT_URL_PROD/DEV` for all server-side code
+- **Client-side standard**: `NEXT_PUBLIC_CONVEX_URL_PROD/DEV` only where necessary for client access
+- **Development vs Production**: Environment-specific variables with clear suffixes
+
+### **Configuration Error Prevention Architecture**
+- **Startup validation**: Environment variables checked at application initialization
+- **Error messaging**: Clear error messages indicate which variables are missing and where to set them
+- **Development guidance**: Error messages include .env.local configuration instructions
+- **Fail-fast principle**: Application refuses to start with invalid configuration rather than using defaults
+
+### **Pattern-Scout Environment Variable Audit Results**
+- **Files requiring updates**: ConvexClientProvider.tsx, API route, middleware.ts, zines page
+- **Inconsistency discovery**: Multiple naming conventions for same purpose across different files
+- **Architecture mismatch**: Server-side code using client-prefixed environment variables
+- **Template identification**: Middleware.ts provided correct pattern for standardization
+
+### **Time Estimation Accuracy - Configuration Standardization**
+- **Initial estimate**: CRITICAL complexity expected significant time investment
+- **Actual time**: ~5 minutes with pattern-scout discovery approach
+- **Success factors**: Pattern-scout identified correct implementation + clear standardization strategy
+- **Key insight**: Configuration tasks are extremely predictable when using discovery tools to find existing correct patterns
+
+### **Security Improvement Through Standardization**
+- **Reduced attack surface**: Server URLs no longer exposed in client bundle
+- **Proper environment isolation**: Development and production configurations properly separated
+- **Configuration validation**: Missing variables cause immediate failures rather than silent defaults
+- **Audit trail**: Clear separation of client vs server configuration for security reviews
+
+### **Deployment Safety Benefits**
+- **Environment-specific URLs**: Production and development environments properly isolated
+- **Configuration errors caught early**: Missing variables fail at startup, not during runtime
+- **No silent fallbacks**: Prevents accidentally connecting to wrong database environment
+- **Clear documentation**: Error messages guide developers to correct configuration

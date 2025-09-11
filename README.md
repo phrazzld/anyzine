@@ -43,9 +43,14 @@ OPENAI_API_KEY=your_openai_api_key_here
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your_clerk_publishable_key
 CLERK_SECRET_KEY=sk_test_your_clerk_secret_key
 
-# Convex Database
-NEXT_PUBLIC_CONVEX_URL=https://your-deployment.convex.cloud
-CONVEX_DEPLOYMENT_URL=https://your-deployment.convex.cloud
+# Convex Database (REQUIRED - no fallbacks)
+# Client-side (for React components)
+NEXT_PUBLIC_CONVEX_URL_DEV=https://your-dev-deployment.convex.cloud
+NEXT_PUBLIC_CONVEX_URL_PROD=https://your-prod-deployment.convex.cloud
+
+# Server-side (for API routes, middleware, SSR)
+CONVEX_DEPLOYMENT_URL_DEV=https://your-dev-deployment.convex.cloud
+CONVEX_DEPLOYMENT_URL_PROD=https://your-prod-deployment.convex.cloud
 ```
 
 ## Installation

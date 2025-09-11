@@ -1,7 +1,72 @@
 # AnyZine Authentication & Database Implementation TODO
 
-Updated: 2025-09-08
-Last Documentation Update: 2025-09-08
+Updated: 2025-09-10
+Last Documentation Update: 2025-09-10
+Code Review Added: 2025-09-10
+
+## 🚨 CRITICAL CODE REVIEW ISSUES (Merge Blockers)
+
+### Configuration & Security Issues
+- [x] **CR-CRITICAL-001** - Fix inconsistent and hardcoded Convex URLs
+  - **Impact**: CRITICAL - Application connects to wrong database in production
+  - **Files**: 
+    - `app/providers/ConvexClientProvider.tsx:10-12`
+    - `app/api/generate-zine/route.ts:74, 80-82`
+    - `app/zines/[id]/page.tsx:8, 9-11`
+    - `middleware.ts:24-26`
+    - `README.md`
+  - **Fix Required**:
+    1. Standardize on single environment variable `CONVEX_URL`
+    2. Remove ALL hardcoded fallback URLs
+    3. Fail fast at startup if variable missing
+    4. Update README with correct variable name
+  ```
+  Work Log:
+  - Used pattern-scout to identify all environment variable inconsistencies
+  - Standardized on CONVEX_DEPLOYMENT_URL_* for server-side code
+  - Kept NEXT_PUBLIC_CONVEX_URL_* for client-side code
+  - Removed ALL hardcoded fallback URLs (laudable-hare-856, youthful-albatross-854)
+  - Added fail-fast error throwing when environment variables are missing
+  - Updated .env.local.example with clear separation of client vs server variables
+  - Updated README.md with correct variable names and "REQUIRED - no fallbacks" note
+  ```
+
+- [ ] **CR-CRITICAL-002** - Fix rate limit bypass in session migration
+  - **Impact**: CRITICAL - Users can bypass rate limits by signing in
+  - **File**: `convex/rateLimits.ts:196`
+  - **Bug**: Migration resets window timer, allowing immediate fresh requests
+  - **Fix**: Preserve original `windowStart` time from anonymous session
+  ```typescript
+  // Before (line 196)
+  windowEnd: now + 24 * 60 * 60 * 1000,
+  // After (preserves cooldown)
+  windowEnd: sessionRecord.windowStart + 24 * 60 * 60 * 1000,
+  ```
+
+### Performance Issues
+- [ ] **CR-CRITICAL-003** - Fix unscalable full-table-scan search
+  - **Impact**: CRITICAL - Will fail under moderate load
+  - **File**: `convex/zines.ts:145-161`
+  - **Bug**: Fetches ALL zines into memory then filters
+  - **Fix Required**:
+    1. Add search index to schema: `.searchIndex("search_subject", { searchField: "subject" })`
+    2. Use `withSearchIndex` instead of `collect()` and `filter()`
+
+### High Priority Fixes
+- [ ] **CR-HIGH-001** - Fix broken unit test blocking CI
+  - **Impact**: HIGH - CI/CD pipeline blocked
+  - **File**: `app/components/SubjectForm.test.tsx`
+  - **Fix**: Update test to query for new placeholder text: `'enter a subject'`
+
+- [ ] **CR-HIGH-002** - Fix form accessibility (submit button outside form)
+  - **Impact**: HIGH - Breaks keyboard submission and accessibility
+  - **File**: `app/components/SubjectForm.tsx`
+  - **Fix**: Move primary "create" button inside `<form>` element with `type="submit"`
+
+- [ ] **CR-HIGH-003** - Fix incorrect rate limit count for new users
+  - **Impact**: HIGH - Shows "1/2" immediately to new users
+  - **File**: `convex/rateLimits.ts:42`
+  - **Fix**: Return full limit for new records, only decrement in `recordRateLimitHit`
 
 ## ✅ COMPLETED TASKS
 

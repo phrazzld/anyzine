@@ -8,8 +8,16 @@ import { SessionMigrationHandler } from "@/app/components/SessionMigrationHandle
 
 // Determine which Convex deployment to use based on environment
 const convexUrl = process.env.NODE_ENV === 'production' 
-  ? process.env.NEXT_PUBLIC_CONVEX_URL_PROD || 'https://laudable-hare-856.convex.cloud'
-  : process.env.NEXT_PUBLIC_CONVEX_URL_DEV || 'https://youthful-albatross-854.convex.cloud';
+  ? process.env.NEXT_PUBLIC_CONVEX_URL_PROD
+  : process.env.NEXT_PUBLIC_CONVEX_URL_DEV;
+
+if (!convexUrl) {
+  throw new Error(
+    `Missing required environment variable: NEXT_PUBLIC_CONVEX_URL_${
+      process.env.NODE_ENV === 'production' ? 'PROD' : 'DEV'
+    }`
+  );
+}
 
 const convex = new ConvexReactClient(convexUrl);
 

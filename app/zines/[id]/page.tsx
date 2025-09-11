@@ -8,8 +8,16 @@ import { ShareButtons } from './ShareButtons';
 // Get Convex client for server-side data fetching
 function getConvexClient(): ConvexHttpClient {
   const convexUrl = process.env.NODE_ENV === 'production'
-    ? process.env.NEXT_PUBLIC_CONVEX_URL_PROD || 'https://laudable-hare-856.convex.cloud'
-    : process.env.NEXT_PUBLIC_CONVEX_URL_DEV || 'https://youthful-albatross-854.convex.cloud';
+    ? process.env.CONVEX_DEPLOYMENT_URL_PROD
+    : process.env.CONVEX_DEPLOYMENT_URL_DEV;
+  
+  if (!convexUrl) {
+    throw new Error(
+      `Missing required environment variable: CONVEX_DEPLOYMENT_URL_${
+        process.env.NODE_ENV === 'production' ? 'PROD' : 'DEV'
+      }`
+    );
+  }
   
   return new ConvexHttpClient(convexUrl);
 }
