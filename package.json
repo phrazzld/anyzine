@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "dompurify": "^3.2.6",
-    "next": "^15.5.7",
+    "next": "15.5.9",
     "openai": "^4.77.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
