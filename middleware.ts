@@ -53,7 +53,7 @@ function getCSPHeader(): string {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https:",
-    "connect-src 'self' https://vercel.live",
+    "connect-src 'self' https://vercel.live https://*.clerk.accounts.dev https://api.clerk.com https://*.convex.cloud wss://*.convex.cloud https://*.i.posthog.com https://*.sentry.io https://*.ingest.sentry.io",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -216,8 +216,13 @@ function getClientIP(request: NextRequest): string {
  * ```
  */
 export async function middleware(request: NextRequest) {
+  // Let PostHog /ingest proxy pass through without rate limiting or CSP
+  if (request.nextUrl.pathname.startsWith('/ingest')) {
+    return NextResponse.next();
+  }
+
   const response = NextResponse.next();
-  
+
   // Always add security headers to all routes
   addSecurityHeaders(response);
   

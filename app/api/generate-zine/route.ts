@@ -77,7 +77,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'openai api key not configured' }, { status: 500 });
   }
 
-  const openai = new OpenAI({ apiKey });
+  const heliconeKey = process.env.HELICONE_API_KEY;
+  const openai = new OpenAI({
+    apiKey,
+    ...(heliconeKey && {
+      baseURL: 'https://oai.helicone.ai/v1',
+      defaultHeaders: {
+        'Helicone-Auth': `Bearer ${heliconeKey}`,
+      },
+    }),
+  });
 
   try {
     const response = await openai.chat.completions.create({
