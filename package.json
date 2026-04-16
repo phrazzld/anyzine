@@ -21,7 +21,7 @@
     "check": "pnpm run lint && pnpm run test:run && pnpm run build"
   },
   "dependencies": {
-    "dompurify": "^3.2.6",
+    "dompurify": "^3.4.0",
     "next": "16.1.5",
     "openai": "^4.77.0",
     "react": "^19.0.0",
